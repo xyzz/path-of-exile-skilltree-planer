@@ -24,15 +24,19 @@ namespace POESKillTree
     /// </summary>
     public partial class MainWindow : Window
     {
+        [Flags]
+        public enum ConditionType { Axe, Sword, Hammer, Staff, Dagger, Claw, Bow, Wand, OneHand, TwoHand, DualWield, Melee, Projectile, Physical, Fire, Cold, Lightning, Chaos, Spell };
+
+        private ConditionType cflags;
         private ItemAttributes ItemAttributes = null;
         SkillTree Tree;
         ToolTip sToolTip = new ToolTip();
         private string lasttooltip;
         private Vector2D multransform = new Vector2D();
         private Vector2D addtransform = new Vector2D();
-
         public MainWindow()
         {
+           
             Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
             Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
@@ -89,11 +93,6 @@ namespace POESKillTree
                 justLoaded = false;
             }
         }
-
-
-
-
-
         private void border1_MouseMove(object sender, MouseEventArgs e)
         {
             Point p = e.GetPosition(border1.Child);
@@ -144,7 +143,6 @@ namespace POESKillTree
             }
 
         }
-
         private List<int> prePath;
         private HashSet<int> toRemove;
         private bool justLoaded = false;
@@ -164,7 +162,6 @@ namespace POESKillTree
             Tree.UpdateAvailNodes();
             UpdateAllAttributeList();
         }
-
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (Tree != null)
@@ -173,7 +170,6 @@ namespace POESKillTree
                 addtransform = Tree.TRect.TopLeft;
             }
         }
-
         private void border1_Click(object sender, RoutedEventArgs e)
         {
 
@@ -205,8 +201,6 @@ namespace POESKillTree
             tbSkillURL.Text = Tree.SaveToURL();
 
         }
-
-
         private List<string> attiblist = new List<string>();
         private ListCollectionView AttibuteCollection;
         Regex backreplace = new Regex("#");
@@ -231,7 +225,6 @@ namespace POESKillTree
             AttibuteCollection.Refresh();
             tbUsedPoints.Text = "" + (Tree.SkilledNodes.Count - 1);
         }
-
         private List<string> allAttributesList = new List<string>();
         private ListCollectionView AllAttributeCollection;
         public void UpdateAllAttributeList()
@@ -363,7 +356,6 @@ namespace POESKillTree
                 throw new NotImplementedException();
             }
         }
-
         public class NumberLessStringComparer : IComparer<string>
         {
             static Regex numberfilter = new Regex(@"[0-9\\.]+");
@@ -377,13 +369,10 @@ namespace POESKillTree
         {
             File.WriteAllText("skilltreeAddress.txt", tbSkillURL.Text + "\n" + tbLevel.Text);
         }
-
         private void tbSkillURL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             tbSkillURL.SelectAll();
         }
-
-
         private void button1_Click_1(object sender, RoutedEventArgs e)
         {
             if (!File.Exists("Data\\get-items"))
@@ -408,29 +397,23 @@ namespace POESKillTree
 
 
         }
-
         private void btnPopup_OnClick(object sender, RoutedEventArgs e)
         {
             popup1.IsOpen = false;
         }
-
         private void btnDownloadItemData_Click(object sender, RoutedEventArgs e)
         {
             popup1.IsOpen = false;
             System.Diagnostics.Process.Start("http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text);
         }
-
         private void tbCharName_TextChanged(object sender, TextChangedEventArgs e)
         {
             tbCharLink.Text = "http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text;
         }
-
         private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
             Tree.HighlightNodes(tbSearch.Text, checkBox1.IsChecked.Value);
         }
-
-
         private void textBox3_TextChanged(object sender, TextChangedEventArgs e)
         {
             int lvl = 0;
@@ -440,13 +423,11 @@ namespace POESKillTree
                 UpdateAllAttributeList();
             }
         }
-
         private void button3_Click(object sender, RoutedEventArgs e)
         {
             Tree.SkillAllHighligtedNodes();
             UpdateAllAttributeList();
         }
-
         private void button4_Click(object sender, RoutedEventArgs e)
         {
             if (Tree == null) return;
@@ -454,7 +435,6 @@ namespace POESKillTree
 
             UpdateAllAttributeList();
         }
-
         private RenderTargetBitmap ClipboardBmp;
         private void btnScreenShot_Click(object sender, RoutedEventArgs e)
         {

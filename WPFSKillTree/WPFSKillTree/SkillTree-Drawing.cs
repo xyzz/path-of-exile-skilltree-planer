@@ -35,8 +35,8 @@ namespace POESKillTree
             SkillTreeVisual.Children.Add(picPathOverlay);
             SkillTreeVisual.Children.Add(picSkillBaseSurround);
             SkillTreeVisual.Children.Add(picSkillSurround);
-            SkillTreeVisual.Children.Add(picFaces);
             SkillTreeVisual.Children.Add(picSkillIconLayer);
+            SkillTreeVisual.Children.Add(picFaces);
             SkillTreeVisual.Children.Add(picHighlights);
         }
         #endregion
