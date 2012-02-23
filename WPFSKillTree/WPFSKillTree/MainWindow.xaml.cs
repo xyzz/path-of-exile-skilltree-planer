@@ -24,10 +24,8 @@ namespace POESKillTree
     /// </summary>
     public partial class MainWindow : Window
     {
-        [Flags]
-        public enum ConditionType { Axe, Sword, Hammer, Staff, Dagger, Claw, Bow, Wand, OneHand, TwoHand, DualWield, Melee, Projectile, Physical, Fire, Cold, Lightning, Chaos, Spell };
-
-        private ConditionType cflags;
+        
+       
         private ItemAttributes ItemAttributes = null;
         SkillTree Tree;
         ToolTip sToolTip = new ToolTip();
