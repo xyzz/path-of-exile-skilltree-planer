@@ -14,7 +14,7 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using CyberEngine.Helper;
+using POESKillTree;
 using WPFSKillTree;
 
 namespace POESKillTree

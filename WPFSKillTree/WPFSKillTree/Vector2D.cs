@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows;
-using CyberEngine.Helper;
 
 namespace POESKillTree
 {
