@@ -31,15 +31,109 @@ namespace POESKillTree
                 {
                     Flat, Percentage, FlatMinMax
                 }
-                public Mod(string attribute, ItemClass ic)
+                public static List<Mod> CreateMods(string attribute, ItemClass ic)
                 {
-                    itemclass = ic;
-                    Value = new List<float>();
+                    List<Mod> mods = new List<Mod>();
+                    List<float> values = new List<float>();
                     foreach (Match match in numberfilter.Matches(attribute))
                     {
-                        Value.Add(float.Parse(match.Value,System.Globalization.CultureInfo.InvariantCulture));
+                        values.Add(float.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture));
                     }
-                    Attribute = numberfilter.Replace(attribute, "#");
+                    string at = numberfilter.Replace(attribute, "#");
+                    if (at == "+# to all Attributes")
+                    {
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+# to Strength"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+# to Dexterity"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+# to Intelligence"
+                        });
+                    }
+                    else if (at == "#% increased Elemental Damage")
+                    {
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Fire Damage"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Cold Damage"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Cold Damage"
+                        });
+                       }
+                    else if (at == "#% increased Elemental Damage with Weapons")
+                    {
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Fire Damage with Weapons"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Cold Damage with Weapons"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "#% increased Lightning Damage with Weapons"
+                        });
+                    }
+                    else if (at == "+#% to all Elemental Resistances")
+                    {
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+#% to Fire Resistance"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+#% to Cold Resistance"
+                        });
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = "+#% to Lightning Resistance"
+                        });
+                    }
+                    else
+                    {
+                        mods.Add(new Mod()
+                        {
+                            itemclass = ic,
+                            Value = values,
+                            Attribute = at
+                        });
+                    }
+                    return mods;
                 }
 
                 private ItemClass itemclass;
@@ -96,7 +190,7 @@ namespace POESKillTree
                                 {
                                     if (xs.NodeType == XmlNodeType.Text)
                                     {
-                                        if (j == 0) Name = xs.Value.Replace("Additional ","");
+                                        if (j == 0) Name = xs.Value.Replace("Additional ", "");
                                         if (j == 1) Type = xs.Value;
                                         j++;
                                     }
@@ -105,7 +199,7 @@ namespace POESKillTree
                             if (s.Contains("displayProperty"))
                             {
                                 List<float> attrval = new List<float>();
-                                string[] span = new string[2]{"",""};
+                                string[] span = new string[2] { "", "" };
                                 var xs = xml.ReadSubtree();
                                 xs.ReadToDescendant("span");
                                 for (int j = 0; xs.Read(); )
@@ -116,8 +210,8 @@ namespace POESKillTree
                                         j++;
                                     }
                                 }
-                                var  matches = numberfilter.Matches(span[1]);
-                                if (matches!=null&&matches.Count!=0)
+                                var matches = numberfilter.Matches(span[1]);
+                                if (matches != null && matches.Count != 0)
                                 {
                                     foreach (Match match in matches)
                                     {
@@ -135,7 +229,7 @@ namespace POESKillTree
                                 {
                                     if (xs.NodeType == XmlNodeType.Text)
                                     {
-                                        Mods.Add(new Mod(xs.Value.Replace("Additional ",""), this.Class));
+                                        Mods.AddRange( Mod.CreateMods(xs.Value.Replace("Additional ", ""), this.Class));
                                     }
                                 }
 
@@ -176,7 +270,7 @@ namespace POESKillTree
             private string attribute;
             private List<float> value;
             private string group;
-            public List<float> Value { get { return value; } } 
+            public List<float> Value { get { return value; } }
             public string TextAttribute
             {
                 get { return attribute; }
@@ -241,7 +335,7 @@ namespace POESKillTree
         }
         public ItemAttributes(string path)
         {
-          #region Readin
+            #region Readin
             RavenJObject jObject = RavenJObject.Parse(File.ReadAllText(path));
             foreach (RavenJObject jobj in (RavenJArray)jObject["items"])
             {
@@ -388,7 +482,7 @@ namespace POESKillTree
             Binding itemsBinding = new Binding();
 
             Attributes.Refresh();
-   
+
         }
         public class NumberLessStringComparer : System.Collections.IComparer
         {

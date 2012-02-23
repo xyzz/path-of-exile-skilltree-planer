@@ -184,7 +184,7 @@ namespace POESKillTree
 
             var nodes = Tree.SkilledNodes.Where(n => ((Tree.Skillnodes[n].Position - v).Length < 50));
             if (nodes != null && nodes.Count() != 0)
-                node =Tree.Skillnodes[nodes.First()];
+                node = Tree.Skillnodes[nodes.First()];
 
             if (node != null)
             {
@@ -240,7 +240,7 @@ namespace POESKillTree
             {
 
 
-                var attritemp = Tree.SelectedAttributes;
+                var attritemp = Tree.SelectedAttributesWithoutImplicit;
                 foreach (ItemAttributes.Attribute mod in ItemAttributes.NonLocalMods)
                 {
                     if (attritemp.ContainsKey(mod.TextAttribute))
@@ -255,6 +255,22 @@ namespace POESKillTree
                         attritemp[mod.TextAttribute] = mod.Value;
                     }
                 }
+             
+               foreach (var a in Tree.ImplicitAttributes(attritemp))
+               {
+                   if (!attritemp.ContainsKey(a.Key))
+                       attritemp[a.Key] = new List<float>();
+                   for (int i = 0; i < a.Value.Count; i++)
+                   {
+
+                       if (attritemp.ContainsKey(a.Key) && attritemp[a.Key].Count > i)
+                           attritemp[a.Key][i] += a.Value[i];
+                       else
+                       {
+                           attritemp[a.Key].Add(a.Value[i]);
+                       }
+                   }
+               }
 
                 allAttributesList.Clear();
                 foreach (var item in (attritemp.Select(InsertNumbersInAttributes)))
@@ -285,48 +301,48 @@ namespace POESKillTree
                 foreach (string s in File.ReadAllLines("groups.txt"))
                 {
                     string[] sa = s.Split(',');
-                    Groups.Add(sa[0], sa[1]);
+                    Groups.Add(sa);
                 }
             }
-            public static Dictionary<string, string> Groups = new Dictionary<string, string>()
-                                                                 {
-                                                                     {"weapon","Weapon"},
-                                                                     {"melee phys","Weapon"},
-                                                                     {"physical dam","Weapon"},
-                                                                     {"charg","Charge"},
-                                                                     {"area","Spell"},
-                                                                     {"crit","Crit"},
-                                                                     {"pierc","Weapon"},
-                                                                     {"proj","Weapon"},
-                                                                     {"minio","Minion"},
-                                                                     {"move","Defense"},
-                                                                     {"mana","Spell"},
-                                                                     {"life","Defense"},
-                                                                     {"armour","Defense"},
-                                                                     {"evasi","Defense"},
-                                                                     {"defence","Defense"},
-                                                                     {"buff","Spell"},
-                                                                     {"spell","Spell"},
-                                                                     {"cast","Spell"},
-                                                                     {"attack","Weapon"},
-                                                                     {"accur","Weapon"},
-                                                                     {"intel","BaseStats"},
-                                                                     {"dex","BaseStats"},
-                                                                     {"stre","BaseStats"},
-                                                                     {"shield","Defense"},
-                                                                     {"dual wiel","Weapon"},
-                                                                     {"bow","Weapon"},
-                                                                     {"axe","Weapon"},
-                                                                     {"mace","Weapon"},
-                                                                     {"stav","Weapon"},
-                                                                     {"staff","Weapon"},
-                                                                     {"dagg","Weapon"},
-                                                                     {"claw","Weapon"},
-                                                                     {"wand","Weapon"},
-                                                                     {"zombie","Minion"},
-                                                                     {"spectre","Minion"},
-                                                                     {"all attrib","BaseStats"},
-                                                                     {"resist","Defense"},
+            public static List<string[]> Groups = new List<string[]>()
+                                                                 { 
+                                                                     new []{"charg","Charge"},
+                                                                     new []{"weapon","Weapon"},
+                                                                       new []{"melee phys","Weapon"},
+                                                                       new []{"physical dam","Weapon"},
+                                                                       new []{"area","Spell"},
+                                                                       new []{"crit","Crit"},
+                                                                       new []{"pierc","Weapon"},
+                                                                       new []{"proj","Weapon"},
+                                                                       new []{"minio","Minion"},
+                                                                       new []{"move","Defense"},
+                                                                       new []{"mana","Spell"},
+                                                                       new []{"life","Defense"},
+                                                                       new []{"armour","Defense"},
+                                                                       new []{"evasi","Defense"},
+                                                                       new []{"defence","Defense"},
+                                                                       new []{"buff","Spell"},
+                                                                       new []{"spell","Spell"},
+                                                                       new []{"cast","Spell"},
+                                                                       new []{"attack","Weapon"},
+                                                                       new []{"accur","Weapon"},
+                                                                       new []{"intel","BaseStats"},
+                                                                       new []{"dex","BaseStats"},
+                                                                       new []{"stre","BaseStats"},
+                                                                       new []{"shield","Defense"},
+                                                                       new []{"dual wiel","Weapon"},
+                                                                       new []{"bow","Weapon"},
+                                                                       new []{"axe","Weapon"},
+                                                                       new []{"mace","Weapon"},
+                                                                       new []{"stav","Weapon"},
+                                                                       new []{"staff","Weapon"},
+                                                                       new []{"dagg","Weapon"},
+                                                                       new []{"claw","Weapon"},
+                                                                       new []{"wand","Weapon"},
+                                                                       new []{"zombie","Minion"},
+                                                                       new []{"spectre","Minion"},
+                                                                       new []{"all attrib","BaseStats"},
+                                                                       new []{"resist","Defense"},
 
                                                                  };
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -334,9 +350,9 @@ namespace POESKillTree
                 string s = (string)value;
                 foreach (var gp in Groups)
                 {
-                    if (s.ToLower().Contains(gp.Key.ToLower()))
+                    if (s.ToLower().Contains(gp[0].ToLower()))
                     {
-                        return gp.Value;
+                        return gp[1];
                     }
                 }
                 return "Everything else";

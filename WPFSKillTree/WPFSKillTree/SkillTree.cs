@@ -167,9 +167,6 @@ namespace POESKillTree
                     ks = token["ks"].Value<bool>(),
                     not = token["not"].Value<bool>(),
                     sa = token["sa"].Value<int>(),
-
-
-
                 });
             }
             List<int[]> links = new List<int[]>();
@@ -255,8 +252,30 @@ namespace POESKillTree
                         else values.Add(float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
 
                     }
-                    skillNode.Value.Attributes[(regexAttrib.Replace(s, "#"))] = values;
-
+                    string cs = (regexAttrib.Replace(s, "#"));
+                    if (cs == "#% increased Elemental Damage")
+                    {
+                        skillNode.Value.Attributes["#% increased Fire Damage"] = values;
+                        skillNode.Value.Attributes["#% increased Cold Damage"] = values;
+                        skillNode.Value.Attributes["#% increased Lightning Damage"] = values;
+                    }
+                    else if (cs=="#% increased Elemental Damage with Weapons")
+                    {
+                        skillNode.Value.Attributes["#% increased Fire Damage with Weapons"] = values;
+                        skillNode.Value.Attributes["#% increased Cold Damage with Weapons"] = values;
+                        skillNode.Value.Attributes["#% increased Lightning Damage with Weapons"] = values;
+                    }
+                    else if (cs == "+#% to all Elemental Resistances")
+                    {
+                        skillNode.Value.Attributes["+#% to Fire Resistance"] = values;
+                        skillNode.Value.Attributes["+#% to Cold Resistance"] = values;
+                        skillNode.Value.Attributes["+#% to Lightning Resistance"] = values;
+                    }
+                    else
+                    {
+                        skillNode.Value.Attributes[cs] = values;
+                    }
+                 
 
                 }
             }
@@ -499,6 +518,30 @@ namespace POESKillTree
         {
             get
             {
+                Dictionary<string, List<float>> temp = SelectedAttributesWithoutImplicit;
+
+                foreach (var a in ImplicitAttributes(temp))
+                {
+                    if (!temp.ContainsKey(a.Key))
+                        temp[a.Key] = new List<float>();
+                    for (int i = 0; i < a.Value.Count; i++)
+                    {
+
+                        if (temp.ContainsKey(a.Key) && temp[a.Key].Count > i)
+                            temp[a.Key][i] += a.Value[i];
+                        else
+                        {
+                            temp[a.Key].Add(a.Value[i]);
+                        }
+                    }
+                }
+                return temp;
+            }
+        }
+        public Dictionary<string, List<float>> SelectedAttributesWithoutImplicit
+        {
+            get
+            {
                 Dictionary<string, List<float>> temp = new Dictionary<string, List<float>>();
                 foreach (var attr in CharBaseAttributes[Chartype])
                 {
@@ -546,22 +589,7 @@ namespace POESKillTree
 
                     }
                 }
-
-                foreach (var a in ImplicitAttributes(temp))
-                {
-                    if (!temp.ContainsKey(a.Key))
-                        temp[a.Key] = new List<float>();
-                    for (int i = 0; i < a.Value.Count; i++)
-                    {
-
-                        if (temp.ContainsKey(a.Key) && temp[a.Key].Count > i)
-                            temp[a.Key][i] += a.Value[i];
-                        else
-                        {
-                            temp[a.Key].Add(a.Value[i]);
-                        }
-                    }
-                }
+               
                 return temp;
             }
         }
