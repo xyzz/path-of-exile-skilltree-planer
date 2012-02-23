@@ -24,11 +24,17 @@ namespace POESKillTree
     /// </summary>
     public partial class MainWindow : Window
     {
-      
+        private ItemAttributes ItemAttributes = null;
+        SkillTree Tree;
+        ToolTip sToolTip = new ToolTip();
+        private string lasttooltip;
+        private Vector2D multransform = new Vector2D();
+        private Vector2D addtransform = new Vector2D();
+
         public MainWindow()
         {
             Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
-
+            Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
             AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
             {
 
@@ -51,90 +57,43 @@ namespace POESKillTree
 
             InitializeComponent();
             AttibuteCollection = new ListCollectionView(attiblist);
-           
+
             listBox1.ItemsSource = AttibuteCollection;
-           // AttibuteCollection.CustomSort = 
-            PropertyGroupDescription  pgd = new PropertyGroupDescription("");
-            pgd.Converter=new GroupStringConverter();
+            // AttibuteCollection.CustomSort = 
+            PropertyGroupDescription pgd = new PropertyGroupDescription("");
+            pgd.Converter = new GroupStringConverter();
             AttibuteCollection.GroupDescriptions.Add(pgd);
 
-            AllAttributeCollection= new ListCollectionView(allAttributesList);
+            AllAttributeCollection = new ListCollectionView(allAttributesList);
             AllAttributeCollection.GroupDescriptions.Add(pgd);
             lbAllAttr.ItemsSource = AllAttributeCollection;
-            string skilltreeobj = "";
-            if (Directory.Exists("Data"))
-            {
-                if (File.Exists("Data\\Skilltree.txt"))
-                {
-                    skilltreeobj = File.ReadAllText("Data\\Skilltree.txt");
-                }
-            }
-            else
-            {
-                Directory.CreateDirectory("Data");
-                Directory.CreateDirectory("Data\\Assets");
-            }
 
-            if (skilltreeobj == "")
-            {
+            Tree = SkillTree.CreateSkillTree();
+            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
 
-                string uriString = "http://www.pathofexile.com/passive-skill-tree/";
-                WebRequest req = WebRequest.Create(uriString);
 
-                WebResponse resp = req.GetResponse();
-                string code = new StreamReader(resp.GetResponseStream()).ReadToEnd();
-                Regex regex = new Regex("var passiveSkillTreeData.*");
-                skilltreeobj = regex.Match(code).Value.Replace("root", "main").Replace("\\/", "/");
-                skilltreeobj = skilltreeobj.Substring(27, skilltreeobj.Length - 27 - 2) + "";
-                File.WriteAllText("Data\\Skilltree.txt", skilltreeobj);
-            }
-
-            Tree = new SkillTree(skilltreeobj);
-            Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-
-            SkillTreeVisual = new DrawingVisual();
-            SkillTreeVisual.Children.Add(Tree.picBackground);
-            SkillTreeVisual.Children.Add(Tree.picLinks);
-            SkillTreeVisual.Children.Add(Tree.picActiveLinks);
-            SkillTreeVisual.Children.Add(Tree.picPathOverlay);
-            SkillTreeVisual.Children.Add(Tree.picSkillTree);
-            SkillTreeVisual.Children.Add(Tree.picFaces);
-            SkillTreeVisual.Children.Add(Tree.picSkillSurround);
-            SkillTreeVisual.Children.Add(Tree.picHighlights);
-
-            image1.Fill = new VisualBrush(SkillTreeVisual);
-
-            SkillTree.SkillNode startnode = Tree.Skillnodes.First(nd => nd.Value.name == cbCharType.Text.ToUpper()).Value;
 
             Tree.Chartype = Tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
-            Tree.SkilledNodes.Add(startnode.id);
             Tree.UpdateAvailNodes();
             UpdateAllAttributeList();
 
             multransform = Tree.TRect.Size / border1.RenderSize.Height;
             addtransform = Tree.TRect.TopLeft;
+
             if (File.Exists("skilltreeAddress.txt"))
             {
                 string s = File.ReadAllText("skilltreeAddress.txt");
                 tbSkillURL.Text = s.Split('\n')[0];
                 tbLevel.Text = s.Split('\n')[1];
-                button2_Click(this,new RoutedEventArgs());
+                button2_Click(this, new RoutedEventArgs());
                 justLoaded = false;
             }
         }
 
-        private DrawingVisual SkillTreeVisual;
-        SkillTree Tree;
-        private void button1_Click(object sender, RoutedEventArgs e)
-        {
-           
-           
-        }
 
-        ToolTip sToolTip = new ToolTip();
-        private string lasttooltip;
-        private Vector2D multransform = new Vector2D();
-        private Vector2D addtransform = new Vector2D();
+
+
+
         private void border1_MouseMove(object sender, MouseEventArgs e)
         {
             Point p = e.GetPosition(border1.Child);
@@ -143,13 +102,11 @@ namespace POESKillTree
             textBox1.Text = "" + v.X;
             textBox2.Text = "" + v.Y;
             SkillTree.SkillNode node = null;
-            try
-            {
-                node = Tree.Skillnodes.First(n => ((n.Value.normPos - v).Length < 50)).Value;
-            }
-            catch (Exception)
-            {
-            }
+
+            var nodes = Tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
+            if (nodes != null && nodes.Count() != 0)
+                node = nodes.First().Value;
+
             if (node != null && node.Attributes.Count != 0)
             {
 
@@ -193,12 +150,12 @@ namespace POESKillTree
         private bool justLoaded = false;
         private void comboBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if(justLoaded)
+            if (justLoaded)
             {
                 justLoaded = false;
                 return;
             }
-            
+
             if (Tree == null) return;
             SkillTree.SkillNode startnode = Tree.Skillnodes.First(nd => nd.Value.name == (((string)((ComboBoxItem)cbCharType.SelectedItem).Content)).ToUpper()).Value;
             Tree.SkilledNodes.Clear();
@@ -224,11 +181,11 @@ namespace POESKillTree
             Vector2D v = new Vector2D(p.X, p.Y);
             v = v * multransform + addtransform;
             SkillTree.SkillNode node = null;
-            try
-            {
-                node = Tree.Skillnodes[Tree.SkilledNodes.First(n => ((Tree.Skillnodes[n].normPos - v).Length < 50))];
-            }
-            catch { }
+
+            var nodes = Tree.SkilledNodes.Where(n => ((Tree.Skillnodes[n].Position - v).Length < 50));
+            if (nodes != null && nodes.Count() != 0)
+                node =Tree.Skillnodes[nodes.First()];
+
             if (node != null)
             {
                 Tree.ForceRefundNode(node.id);
@@ -248,39 +205,12 @@ namespace POESKillTree
             tbSkillURL.Text = Tree.SaveToURL();
 
         }
-        public string Encode(string str)
-        {
-            try
-            {
-                byte[] encbuff = System.Text.Encoding.UTF8.GetBytes(str);
-                return Convert.ToBase64String(encbuff);
-            }
-            catch (Exception e)
-            {
 
-                throw new Exception("Error in base64Encode" + e.Message);
-            }
-
-        }
-        public string Decode(string str)
-        {
-            try
-            {
-                byte[] decbuff = Convert.FromBase64String(str);
-                return System.Text.Encoding.UTF8.GetString(decbuff);
-            }
-            catch (Exception e)
-            {
-
-                throw new Exception("Error in base64Decode" + e.Message);
-            }
-
-        }
 
         private List<string> attiblist = new List<string>();
         private ListCollectionView AttibuteCollection;
         Regex backreplace = new Regex("#");
-        private string InsertNumbersInAttributes(KeyValuePair<string,List<float>> attrib)
+        private string InsertNumbersInAttributes(KeyValuePair<string, List<float>> attrib)
         {
             string s = attrib.Key;
             foreach (var f in attrib.Value)
@@ -291,15 +221,15 @@ namespace POESKillTree
         }
         public void UpdateAttributeList()
         {
-            
-                attiblist.Clear();
-                foreach (var item in (Tree.SelectedAttributes.Select(InsertNumbersInAttributes)))
-                {
-                    attiblist.Add(item);
 
-                }
-                AttibuteCollection.Refresh();
-            tbUsedPoints.Text = ""+(Tree.SkilledNodes.Count - 1);
+            attiblist.Clear();
+            foreach (var item in (Tree.SelectedAttributes.Select(InsertNumbersInAttributes)))
+            {
+                attiblist.Add(item);
+
+            }
+            AttibuteCollection.Refresh();
+            tbUsedPoints.Text = "" + (Tree.SkilledNodes.Count - 1);
         }
 
         private List<string> allAttributesList = new List<string>();
@@ -346,7 +276,7 @@ namespace POESKillTree
             UpdateAllAttributeList();
         }
         [ValueConversion(typeof(string), typeof(string))]
-        public class GroupStringConverter :IValueConverter
+        public class GroupStringConverter : IValueConverter
         {
             static GroupStringConverter()
             {
@@ -355,10 +285,10 @@ namespace POESKillTree
                 foreach (string s in File.ReadAllLines("groups.txt"))
                 {
                     string[] sa = s.Split(',');
-                    Groups.Add(sa[0],sa[1]);
+                    Groups.Add(sa[0], sa[1]);
                 }
             }
-            public static Dictionary<string,string> Groups = new Dictionary<string, string>()
+            public static Dictionary<string, string> Groups = new Dictionary<string, string>()
                                                                  {
                                                                      {"weapon","Weapon"},
                                                                      {"melee phys","Weapon"},
@@ -401,7 +331,7 @@ namespace POESKillTree
                                                                  };
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             {
-                string s = (string) value;
+                string s = (string)value;
                 foreach (var gp in Groups)
                 {
                     if (s.ToLower().Contains(gp.Key.ToLower()))
@@ -429,7 +359,7 @@ namespace POESKillTree
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            File.WriteAllText("skilltreeAddress.txt",tbSkillURL.Text+"\n"+tbLevel.Text);
+            File.WriteAllText("skilltreeAddress.txt", tbSkillURL.Text + "\n" + tbLevel.Text);
         }
 
         private void tbSkillURL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -437,7 +367,7 @@ namespace POESKillTree
             tbSkillURL.SelectAll();
         }
 
-        private ItemAttributes ItemAttributes=null;
+
         private void button1_Click_1(object sender, RoutedEventArgs e)
         {
             if (!File.Exists("Data\\get-items"))
@@ -445,19 +375,20 @@ namespace POESKillTree
                 popup1.IsOpen = true;
                 return;
             }
-        
-           try{
-            ItemAttributes = new ItemAttributes("Data\\get-items");
-            lbItemAttr.ItemsSource = ItemAttributes.Attributes;
-            UpdateAllAttributeList();
-                         }
+
+            try
+            {
+                ItemAttributes = new ItemAttributes("Data\\get-items");
+                lbItemAttr.ItemsSource = ItemAttributes.Attributes;
+                UpdateAllAttributeList();
+            }
             catch (Exception er)
             {
-               MessageBoxResult result = MessageBox.Show( "Your ItemData is invalid.\nYou  either tried to download the data for a character not on your account or you were not logged in while downloading it");
-               popup1.IsOpen = true;
+                MessageBoxResult result = MessageBox.Show("Your ItemData is invalid.\nYou  either tried to download the data for a character not on your account or you were not logged in while downloading it");
+                popup1.IsOpen = true;
             }
-          // lbItemAttr.Items.Clear();
-           
+            // lbItemAttr.Items.Clear();
+
 
 
         }
@@ -470,7 +401,7 @@ namespace POESKillTree
         private void btnDownloadItemData_Click(object sender, RoutedEventArgs e)
         {
             popup1.IsOpen = false;
-            System.Diagnostics.Process.Start("http://www.pathofexile.com/character-window/get-items?character="+tbCharName.Text);
+            System.Diagnostics.Process.Start("http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text);
         }
 
         private void tbCharName_TextChanged(object sender, TextChangedEventArgs e)
@@ -480,37 +411,13 @@ namespace POESKillTree
 
         private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (tbSearch.Text == "")
-            {
-                Tree.DrawHighlights(new List<SkillTree.SkillNode>());
-                highlightnodes = null;
-                return;
-            }
-
-            if (checkBox1.IsChecked.Value)
-            {
-                try
-                {
-                    List<SkillTree.SkillNode> nodes = highlightnodes = Tree.Skillnodes.Values.Where(nd => nd.attributes.Where(att => new Regex(tbSearch.Text, RegexOptions.IgnoreCase).IsMatch(att)).Count() > 0 || new Regex(tbSearch.Text, RegexOptions.IgnoreCase).IsMatch(nd.name)).ToList();
-                    Tree.DrawHighlights(nodes);
-                }
-                catch (Exception)
-                {}  
-               
-            }
-            else
-            {
-                List<SkillTree.SkillNode> nodes = highlightnodes = Tree.Skillnodes.Values.Where(nd => nd.attributes.Where(att =>att.ToLower().Contains(tbSearch.Text.ToLower())).Count()!=0  ||nd.name.ToLower().Contains(tbSearch.Text.ToLower()) ).ToList();
-                Tree.DrawHighlights(nodes);
-            }
-               
-        
+            Tree.HighlightNodes(tbSearch.Text, checkBox1.IsChecked.Value);
         }
 
-        private List<SkillTree.SkillNode> highlightnodes; 
+
         private void textBox3_TextChanged(object sender, TextChangedEventArgs e)
         {
-            int lvl =0;
+            int lvl = 0;
             if (int.TryParse(tbLevel.Text, out lvl))
             {
                 Tree.Level = lvl;
@@ -520,45 +427,15 @@ namespace POESKillTree
 
         private void button3_Click(object sender, RoutedEventArgs e)
         {
-            if (highlightnodes==null) return;
-            HashSet<int> nodes = new HashSet<int>();
-            foreach (var nd in highlightnodes)
-            {
-                nodes.Add(nd.id);
-            }
-            SkillStep(nodes);
-
-        }
-        public  HashSet<int> SkillStep(  HashSet<int> hs)
-        {
-            List<List<int>> pathes = new List<List<int>>();
-            foreach (var nd in highlightnodes)
-            {
-                pathes.Add(Tree.GetShortestPathTo(nd.id));
-              
-               
-            }
-            pathes.Sort((p1, p2) => p1.Count.CompareTo(p2.Count));
-            pathes.RemoveAll(p => p.Count == 0);
-            foreach (int i in pathes[0])
-            {
-                hs.Remove(i);
-                Tree.SkilledNodes.Add(i);
-            }
+            Tree.SkillAllHighligtedNodes();
             UpdateAllAttributeList();
-            Tree.UpdateAvailNodes();
-            
-            return hs.Count==0?hs:SkillStep(hs);
         }
 
         private void button4_Click(object sender, RoutedEventArgs e)
         {
             if (Tree == null) return;
-            SkillTree.SkillNode startnode = Tree.Skillnodes.First(nd => nd.Value.name == (((string)((ComboBoxItem)cbCharType.SelectedItem).Content)).ToUpper()).Value;
-            Tree.SkilledNodes.Clear();
-            Tree.SkilledNodes.Add(startnode.id);
-            Tree.Chartype = Tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
-            Tree.UpdateAvailNodes();
+            Tree.Reset();
+
             UpdateAllAttributeList();
         }
 
@@ -570,14 +447,14 @@ namespace POESKillTree
             Rect2D contentBounds = Tree.picActiveLinks.ContentBounds;
             contentBounds *= 1.2;
 
-           
-            double aspect=contentBounds.Width/contentBounds.Height;
+
+            double aspect = contentBounds.Width / contentBounds.Height;
             double xmax = contentBounds.Width;
             double ymax = contentBounds.Height;
             if (aspect > 1 && xmax > maxsize)
             {
                 xmax = maxsize;
-                ymax = xmax/aspect;
+                ymax = xmax / aspect;
             }
             if (aspect < 1 & ymax > maxsize)
             {
@@ -586,21 +463,21 @@ namespace POESKillTree
             }
 
             ClipboardBmp = new RenderTargetBitmap((int)xmax, (int)ymax, 96, 96, PixelFormats.Pbgra32);
-            VisualBrush db = new VisualBrush(SkillTreeVisual);
+            VisualBrush db = new VisualBrush(Tree.SkillTreeVisual);
             db.ViewboxUnits = BrushMappingMode.Absolute;
             db.Viewbox = contentBounds;
             DrawingVisual dw = new DrawingVisual();
 
             using (DrawingContext dc = dw.RenderOpen())
             {
-                dc.DrawRectangle(db,null,new Rect(0,0,xmax,ymax));
+                dc.DrawRectangle(db, null, new Rect(0, 0, xmax, ymax));
             }
             ClipboardBmp.Render(dw);
             ClipboardBmp.Freeze();
-          
+
             Clipboard.SetImage(ClipboardBmp);
-            
-            image1.Fill = new VisualBrush(SkillTreeVisual);
+
+            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
 
         }
     }

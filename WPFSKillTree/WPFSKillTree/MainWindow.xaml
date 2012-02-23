@@ -38,7 +38,7 @@
                 </StackPanel>
             </Border>
         </Popup>
-        <Button Content="Save to file" Height="23" HorizontalAlignment="Left" Margin="0,0,0,29" Name="btnSave" VerticalAlignment="Bottom" Width="88" Click="button1_Click" VerticalContentAlignment="Bottom" />
+        <Button Content="Save to file" Height="23" HorizontalAlignment="Left" Margin="0,0,0,29" Name="btnSave" VerticalAlignment="Bottom" Width="88"  VerticalContentAlignment="Bottom" />
         <POESKillTree:ZoomBorder BorderBrush="Silver" BorderThickness="1" Height="auto" x:Name="border1" ClipToBounds="True" MouseMove="border1_MouseMove" Margin="419,0,0,0" Click="border1_Click" Background="Black" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
             <Rectangle Height="auto" Name="image1" Stretch="Uniform" Width="auto" ClipToBounds="True" />
         </POESKillTree:ZoomBorder>

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Raven.Json.Linq;
@@ -11,9 +13,91 @@ using System.Diagnostics;
 
 namespace POESKillTree
 {
-    public class SkillTree
+    public partial class SkillTree
     {
+        string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
+        public List<NodeGroup> NodeGroups = new List<NodeGroup>();
+        public Dictionary<int, SkillNode> Skillnodes = new Dictionary<int, SkillNode>();
+        public List<string> AttributeTypes = new List<string>();
+        // public Bitmap iconActiveSkills;
+        public SkillIcons iconInActiveSkills = new SkillIcons();
+        public SkillIcons iconActiveSkills = new SkillIcons();
+        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normalA", "PSSkillFrameActive" }, { "normal", "PSSkillFrame" }, { "notable", "imgNotableBackgroundNormal" }, { "keystone", "imgKeystoneBackgroundNormal" } };
+        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSKillFrameActive" }, { "notable", "imgNotableBackgroundHighlight" }, { "keystone", "imgKeystoneBackgroundHighlight" } };
+        public List<string> FaceNames = new List<string>() { "PSFaceStr", "PSFaceDex", "PSFaceInt", "PSFaceStrDex", "PSFaceStrInt", "PSFaceDexInt" };
+        public List<string> CharName = new List<string>() { "MARAUDER", "RANGER", "WITCH", "DUELIST", "TEMPLAR", "SIX" };
+        public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string, float>[6];
+        public Dictionary<string, float> BaseAttributes = new Dictionary<string, float>()
+                                                              {
+                                                                  {"+# to maximum Mana",36},
+                                                                  {"+# to maximum Life",45},
+                                                                  {"Evasion Rating: #",50},
+                                                                  {"+# Maximum Endurance Charge",2},
+                                                                  {"+# Maximum Frenzy Charge",2},
+                                                                  {"+# Maximum Power Charge",2},
+                                                                  {"#% Additional Elemental Resistance per Endurance Charge",5},
+                                                                  {"#% Physical Damage Reduction per Endurance Charge",5},
+                                                                  {"#% Attack Speed Increase per Frenzy Charge",5},
+                                                                  {"#% Cast Speed Increase per Frenzy Charge",5},
+                                                                  {"#% Critical Strike Chance Increase per Power Charge",50},
+                                                              };
+        public static float LifePerLevel = 5;
+        public static float ManaPerLevel = 4;
+        public static float IntPerMana = 2;
+        public static float IntPerES = 5; //%
+        public static float StrPerLife = 2;
+        public static float StrPerED = 5; //%
+        public static float DexPerAcc = 0.5f;
+        public static float DexPerEvas = 5; //%
+        private List<SkillTree.SkillNode> highlightnodes; 
+        private int level = 1;
+        private int chartype = 0;
+        public HashSet<int> SkilledNodes = new HashSet<int>();
+        public HashSet<int> AvailNodes = new HashSet<int>();
+        Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
+        public Rect2D TRect = new Rect2D();
+        public float scaleFactor = 1;
+        public HashSet<int[]> Links = new HashSet<int[]>();
+        public void Reset()
+        {
+            SkilledNodes.Clear();
+            var node = Skillnodes.First(nd => nd.Value.name == CharName[chartype]);
+            SkilledNodes.Add(node.Value.id);
+            UpdateAvailNodes();
+        }
+        public static SkillTree CreateSkillTree()
+        {
 
+            string skilltreeobj = "";
+            if (Directory.Exists("Data"))
+            {
+                if (File.Exists("Data\\Skilltree.txt"))
+                {
+                    skilltreeobj = File.ReadAllText("Data\\Skilltree.txt");
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory("Data");
+                Directory.CreateDirectory("Data\\Assets");
+            }
+
+            if (skilltreeobj == "")
+            {
+
+                string uriString = "http://www.pathofexile.com/passive-skill-tree/";
+                WebRequest req = WebRequest.Create(uriString);
+
+                WebResponse resp = req.GetResponse();
+                string code = new StreamReader(resp.GetResponseStream()).ReadToEnd();
+                Regex regex = new Regex("var passiveSkillTreeData.*");
+                skilltreeobj = regex.Match(code).Value.Replace("root", "main").Replace("\\/", "/");
+                skilltreeobj = skilltreeobj.Substring(27, skilltreeobj.Length - 27 - 2) + "";
+                File.WriteAllText("Data\\Skilltree.txt", skilltreeobj);
+            }
+
+            return new SkillTree(skilltreeobj);
+        }
         public SkillTree(String treestring)
         {
 
@@ -68,25 +152,25 @@ namespace POESKillTree
             foreach (RavenJObject token in jObject["nodes"].Values())
             {
                 Skillnodes.Add(token["id"].Value<int>(), new SkillTree.SkillNode()
-                                                             {
-                                                                 id = token["id"].Value<int>(),
-                                                                 a = token["a"].Value<int>(),
-                                                                 name = token["dn"].Value<string>(),
-                                                                 attributes = token["sd"].Values<string>().ToArray(),
-                                                                 orbit = token["o"].Value<int>(),
-                                                                 orbitIndex = token["oidx"].Value<int>(),
-                                                                 icon = token["icon"].Value<string>(),
-                                                                 linkID = token["out"].Values<int>().ToList(),
-                                                                 g = token["g"].Value<int>(),
-                                                                 da = token["da"].Value<int>(),
-                                                                 ia = token["ia"].Value<int>(),
-                                                                 ks = token["ks"].Value<bool>(),
-                                                                 not = token["not"].Value<bool>(),
-                                                                 sa = token["sa"].Value<int>(),
+                {
+                    id = token["id"].Value<int>(),
+                    a = token["a"].Value<int>(),
+                    name = token["dn"].Value<string>(),
+                    attributes = token["sd"].Values<string>().ToArray(),
+                    orbit = token["o"].Value<int>(),
+                    orbitIndex = token["oidx"].Value<int>(),
+                    icon = token["icon"].Value<string>(),
+                    linkID = token["out"].Values<int>().ToList(),
+                    g = token["g"].Value<int>(),
+                    da = token["da"].Value<int>(),
+                    ia = token["ia"].Value<int>(),
+                    ks = token["ks"].Value<bool>(),
+                    not = token["not"].Value<bool>(),
+                    sa = token["sa"].Value<int>(),
 
 
 
-                                                             });
+                });
             }
             List<int[]> links = new List<int[]>();
             foreach (var skillNode in Skillnodes)
@@ -139,163 +223,20 @@ namespace POESKillTree
 
             TRect = new Rect2D(new Vector2D(jObject["min_x"].Value<float>() * 1.1, jObject["min_y"].Value<float>() * 1.1),
                                new Vector2D(jObject["max_x"].Value<float>() * 1.1, jObject["max_y"].Value<float>() * 1.1));
-            //picSkillTree = new BitmapImage((int)imagesize, (int)imagesize);
+           
 
-            //   Graphics g = Graphics.FromImage(picSkillTree);
-            //  g.SmoothingMode = SmoothingMode.AntiAlias;
-            //  g.Clear(Color.Black);
+         
 
-
-            Pen pen = new Pen(Brushes.Black, 5);
-
-            Pen pen3 = new Pen(Brushes.Green, 10);
-            DrawingVisual drawingVisual = new DrawingVisual();
-
-            Geometry g = new RectangleGeometry(TRect);
-
-            Size sizeNot;
-            ImageBrush brNot = new ImageBrush();
-            brNot.Stretch = Stretch.Uniform;
-            BitmapImage PImageNot = assets[nodeBackgrounds["notable"]].PImage;
-            brNot.ImageSource = PImageNot;
-            sizeNot = new Size(PImageNot.PixelWidth, PImageNot.PixelHeight);
-
-
-            Size sizeKs;
-            ImageBrush brKS = new ImageBrush();
-            brKS.Stretch = Stretch.Uniform;
-            BitmapImage PImageKr = assets[nodeBackgrounds["keystone"]].PImage;
-            brKS.ImageSource = PImageKr;
-            sizeKs = new Size(PImageKr.PixelWidth, PImageKr.PixelHeight);
-
-            Size isizeNorm;
-            ImageBrush brNorm = new ImageBrush();
-            brNorm.Stretch = Stretch.Uniform;
-            BitmapImage PImageNorm = assets[nodeBackgrounds["normal"]].PImage;
-            brNorm.ImageSource = PImageNorm;
-            isizeNorm = new Size(PImageNorm.PixelWidth, PImageNorm.PixelHeight);
-
-            Size isizeNormA;
-            ImageBrush brNormA = new ImageBrush();
-            brNormA.Stretch = Stretch.Uniform;
-            BitmapImage PImageNormA = assets[nodeBackgrounds["normalA"]].PImage;
-            brNormA.ImageSource = PImageNormA;
-            isizeNormA = new Size(PImageNormA.PixelWidth, PImageNormA.PixelHeight);
-
-            NodeSurroundBrush.Add(new KeyValuePair<Size, ImageBrush>(isizeNorm, brNorm));
-            NodeSurroundBrush.Add(new KeyValuePair<Size, ImageBrush>(isizeNormA, brNormA));
-            NodeSurroundBrush.Add(new KeyValuePair<Size, ImageBrush>(sizeKs, brKS));
-            NodeSurroundBrush.Add(new KeyValuePair<Size, ImageBrush>(sizeNot, brNot));
-
-            using (DrawingContext dc = drawingVisual.RenderOpen())
-            {
-                dc.DrawGeometry(null, pen, g);
-                foreach (var skillNode in Skillnodes)
-                {
-                    Vector2D pos = (skillNode.Value.Position);
-                    skillNode.Value.normPos = pos;
-
-
-                    // dc.DrawEllipse(Brushes.Transparent, pen, new Point(pos.X, pos.Y), 60, 60);
-                    //  r.FillEllipse(Brushes.Black, (float)pos.X - 15, (float)pos.Y - 15, 30, 30);
-
-                    if (skillNode.Value.linkID != null)
-                        foreach (var i in skillNode.Value.linkID)
-                        {
-                            double arcstart = (float)skillNode.Value.Arc;
-                            double arcrad = Skillnodes[i].Arc;
-                            Vector2D linkpos = (Skillnodes[i].Position);
-
-                            //  dc.DrawLine(pen2, new Point(linkpos.X, linkpos.Y), new Point(pos.X, pos.Y));
-                            // g.DrawLine(new Pen(Color.Blue, 5), (float)linkpos.X, (float)linkpos.Y, (float)pos.X, ;
-                        }
-
-                }
-
-                foreach (var skillNode in Skillnodes)
-                {
-                    Vector2D pos = (skillNode.Value.Position);
-                    if (skillNode.Value.not)
-                    {
-                        dc.DrawRectangle(NodeSurroundBrush[3].Value, null,
-                                         new Rect((int)pos.X - NodeSurroundBrush[3].Key.Width, (int)pos.Y - NodeSurroundBrush[3].Key.Height, NodeSurroundBrush[3].Key.Width * 2,
-                                                  NodeSurroundBrush[3].Key.Height * 2));
-                    }
-                    else if (skillNode.Value.ks)
-                    {
-                        dc.DrawRectangle(NodeSurroundBrush[2].Value, null,
-                                         new Rect((int)pos.X - NodeSurroundBrush[2].Key.Width, (int)pos.Y - NodeSurroundBrush[2].Key.Height, NodeSurroundBrush[2].Key.Width * 2,
-                                                  NodeSurroundBrush[2].Key.Height * 2));
-                    }
-                   
-                        dc.DrawRectangle(NodeSurroundBrush[0].Value, null,
-                                         new Rect((int)pos.X - NodeSurroundBrush[0].Key.Width, (int)pos.Y - NodeSurroundBrush[0].Key.Height,
-                                                  NodeSurroundBrush[0].Key.Width * 2, NodeSurroundBrush[0].Key.Height * 2));
-                }
-                foreach (var skillNode in Skillnodes)
-                {
-
-                    Size isize;
-                    ImageBrush br = new ImageBrush();
-                    Rect r = iconActiveSkills.SkillPositions[3][skillNode.Value.icon];
-                    BitmapImage bi = iconActiveSkills.Images[3];
-                    br.Stretch = Stretch.Uniform;
-                    br.ImageSource = bi;
-
-                    br.ViewboxUnits = BrushMappingMode.RelativeToBoundingBox;
-                    br.Viewbox = new Rect(r.X / bi.PixelWidth, r.Y / bi.PixelHeight, r.Width / bi.PixelWidth, r.Height / bi.PixelHeight);
-                    Vector2D pos = (skillNode.Value.Position);
-                    dc.DrawEllipse(br, null, pos, r.Width, r.Height);
-
-                }
-                //   g.Dispose();
-            }
-
-            picSkillTree = drawingVisual;
-            picSkillSurround = new DrawingVisual();
-
-          
+            InitNodeSurround();
             DrawNodeSurround();
-            // picLinks = new RenderTargetBitmap((int)imagesize, (int)imagesize, 96, 96,PixelFormats.Pbgra32);
-            // picLinks.Clear();  
+            DrawNodeBaseSurround();
+            DrawSkillIconLayer();
+            DrawBackgroundLayer();
+            InitFaceBrushesAndLayer();
+            DrawLinkBackgroundLayer(links);
+            InitOtherDynamicLayers();
+            CreateCombineVisual();
 
-            picLinks = new DrawingVisual();
-
-            Pen pen2 = new Pen(Brushes.DarkSlateGray, 32);
-            using (DrawingContext dc = picLinks.RenderOpen())
-            {
-                dc.DrawGeometry(null, pen, g);
-                foreach (var nid in links)
-                {
-                    var n1 = Skillnodes[nid[0]];
-                    var n2 = Skillnodes[nid[1]];
-
-                    if (n1.NodeGroup == n2.NodeGroup && n1.orbit == n2.orbit)
-                    {
-
-                        if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc < Math.PI || n1.Arc - n2.Arc < -Math.PI)
-                        {
-                            dc.DrawArc(null, pen2, n1.normPos, n2.normPos,
-                                  new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                           SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                        }
-                        else
-                        {
-                            dc.DrawArc(null, pen2, n2.normPos, n1.normPos,
-                                  new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                           SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                        }
-                    }
-                    else
-                    {
-                        dc.DrawLine(pen2, n1.normPos, n2.normPos);
-                    }
-                }
-
-            }
-
-
-            // picSkillTree.Save("testtree.png");
 
             Regex regexAttrib = new Regex("[0-9]*\\.?[0-9]+");
             foreach (var skillNode in Skillnodes)
@@ -303,7 +244,7 @@ namespace POESKillTree
                 skillNode.Value.Attributes = new Dictionary<string, List<float>>();
                 foreach (string s in skillNode.Value.attributes)
                 {
-                    
+
                     List<float> values = new List<float>();
 
                     foreach (Match m in regexAttrib.Matches(s))
@@ -311,7 +252,7 @@ namespace POESKillTree
 
                         if (!AttributeTypes.Contains(regexAttrib.Replace(s, "#"))) AttributeTypes.Add(regexAttrib.Replace(s, "#"));
                         if (m.Value == "") values.Add(float.NaN);
-                        else values.Add(float.Parse(m.Value,System.Globalization.CultureInfo.InvariantCulture));
+                        else values.Add(float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
 
                     }
                     skillNode.Value.Attributes[(regexAttrib.Replace(s, "#"))] = values;
@@ -320,138 +261,8 @@ namespace POESKillTree
                 }
             }
 
-            picActiveLinks = new DrawingVisual();
-            picPathOverlay = new DrawingVisual();
-
-
-            picBackground = new DrawingVisual();
-            using (DrawingContext dc = picBackground.RenderOpen())
-            {
-                BitmapImage[] iscr = new BitmapImage[] { assets["PSGroupBackground1"].PImage, assets["PSGroupBackground2"].PImage, assets["PSGroupBackground3"].PImage };
-                Brush[] OrbitBrush = new Brush[3];
-                OrbitBrush[0] = new ImageBrush(assets["PSGroupBackground1"].PImage);
-                OrbitBrush[1] = new ImageBrush(assets["PSGroupBackground2"].PImage);
-                OrbitBrush[2] = new ImageBrush(assets["PSGroupBackground3"].PImage);
-                (OrbitBrush[2] as ImageBrush).TileMode = TileMode.FlipXY;
-                (OrbitBrush[2] as ImageBrush).Viewport = new Rect(0, 0, 1, .5f);
-
-                ImageBrush BackgroundBrush = new ImageBrush(assets["imgPanelBackground"].PImage);
-                BackgroundBrush.TileMode = TileMode.FlipXY;
-                dc.DrawRectangle(BackgroundBrush, null, TRect);
-                foreach (var ngp in NodeGroups)
-                {
-                    int maxr = ngp.OcpOrb.Keys.Max(ng => int.Parse(ng));
-                    if (maxr == 0) continue;
-                    maxr = maxr > 3 ? 2 : maxr - 1;
-                    int maxfac = maxr == 2 ? 2 : 1;
-                    dc.DrawRectangle(OrbitBrush[maxr], null, new Rect(ngp.Position - new Vector2D(iscr[maxr].PixelWidth, iscr[maxr].PixelHeight * maxfac), new Size(iscr[maxr].PixelWidth * 2, iscr[maxr].PixelHeight * 2 * maxfac)));
-                }
-            }
-            foreach (string faceName in FaceNames)
-            {
-                var bi = new BitmapImage(new Uri("Data\\Assets\\" + faceName + ".png", UriKind.Relative));
-                FacesBrush.Add(new KeyValuePair<Rect, ImageBrush>(new Rect(0, 0, bi.PixelWidth, bi.PixelHeight), new ImageBrush(bi)));
-            }
-            var bi2 = new BitmapImage(new Uri("Data\\Assets\\PSStartNodeBackgroundInactive.png", UriKind.Relative));
-            var bi3 = new BitmapImage(new Uri("Data\\Assets\\PSStartNodeBackgroundActive.png", UriKind.Relative));
-            StartBackgrounds.Add(false, (new KeyValuePair<Rect, ImageBrush>(new Rect(0, 0, bi2.PixelWidth, bi2.PixelHeight), new ImageBrush(bi2))));
-            StartBackgrounds.Add(true, (new KeyValuePair<Rect, ImageBrush>(new Rect(0, 0, bi3.PixelWidth, bi3.PixelHeight), new ImageBrush(bi3))));
-            picFaces = new DrawingVisual();
-            picHighlights = new DrawingVisual();
-
-
-
+           
         }
-
-        private void DrawNodeSurround()
-        {
-            using (DrawingContext dc = picSkillSurround.RenderOpen())
-            {
-
-                foreach (var skillNode in SkilledNodes)
-                {
-                    Vector2D pos = (Skillnodes[skillNode].Position);
-                    if (Skillnodes[skillNode].not)
-                    {
-                        dc.DrawRectangle(NodeSurroundBrush[3].Value, null,
-                                         new Rect((int)pos.X - NodeSurroundBrush[3].Key.Width, (int)pos.Y - NodeSurroundBrush[3].Key.Height, NodeSurroundBrush[3].Key.Width * 2,
-                                                  NodeSurroundBrush[3].Key.Height * 2));
-                    }
-                    else if (Skillnodes[skillNode].ks)
-                    {
-                        dc.DrawRectangle(NodeSurroundBrush[2].Value, null,
-                                         new Rect((int)pos.X - NodeSurroundBrush[2].Key.Width, (int)pos.Y - NodeSurroundBrush[2].Key.Height, NodeSurroundBrush[2].Key.Width * 2,
-                                                  NodeSurroundBrush[2].Key.Height * 2));
-                    }
-
-
-
-                    dc.DrawRectangle(NodeSurroundBrush[1].Value, null,
-                                     new Rect((int)pos.X - NodeSurroundBrush[1].Key.Width, (int)pos.Y - NodeSurroundBrush[1].Key.Height,
-                                              NodeSurroundBrush[1].Key.Width * 2, NodeSurroundBrush[1].Key.Height * 2));
-
-                    Size isize;
-                    ImageBrush br = new ImageBrush();
-                    Rect r = iconActiveSkills.SkillPositions[3][Skillnodes[skillNode].icon];
-                    BitmapImage bi = iconActiveSkills.Images[3];
-                    br.Stretch = Stretch.Uniform;
-                    br.ImageSource = bi;
-
-                    br.ViewboxUnits = BrushMappingMode.RelativeToBoundingBox;
-                    br.Viewbox = new Rect(r.X / bi.PixelWidth, r.Y / bi.PixelHeight, r.Width / bi.PixelWidth, r.Height / bi.PixelHeight);
-
-                    dc.DrawEllipse(br, null, pos, r.Width, r.Height);
-
-
-                }
-            }
-        }
-
-        public List<NodeGroup> NodeGroups = new List<NodeGroup>();
-        public Dictionary<int, SkillNode> Skillnodes = new Dictionary<int, SkillNode>();
-        public List<string> AttributeTypes = new List<string>();
-        // public Bitmap iconActiveSkills;
-        public SkillIcons iconInActiveSkills = new SkillIcons();
-        public SkillIcons iconActiveSkills = new SkillIcons();
-        public DrawingVisual picSkillTree;
-        public DrawingVisual picSkillSurround;
-        public DrawingVisual picLinks;
-        public DrawingVisual picActiveLinks;
-        public DrawingVisual picPathOverlay;
-        public DrawingVisual picBackground;
-        public DrawingVisual picFaces;
-        public DrawingVisual picHighlights;
-        public List<string> FaceNames = new List<string>() { "PSFaceStr", "PSFaceDex", "PSFaceInt", "PSFaceStrDex", "PSFaceStrInt", "PSFaceDexInt" };
-        public Dictionary<bool, KeyValuePair<Rect, ImageBrush>> StartBackgrounds = new Dictionary<bool, KeyValuePair<Rect, ImageBrush>>();
-        public List<KeyValuePair<Size, ImageBrush>> NodeSurroundBrush = new List<KeyValuePair<Size, ImageBrush>>();
-        public List<KeyValuePair<Rect, ImageBrush>> FacesBrush = new List<KeyValuePair<Rect, ImageBrush>>();
-        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normalA", "PSSkillFrameActive" }, { "normal", "PSSkillFrame" }, { "notable", "imgNotableBackgroundNormal" }, { "keystone", "imgKeystoneBackgroundNormal" } };
-        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSKillFrameActive" }, { "notable", "imgNotableBackgroundHighlight" }, { "keystone", "imgKeystoneBackgroundHighlight" } };
-        public List<string> CharName = new List<string>() { "MARAUDER", "RANGER", "WITCH", "DUELIST", "TEMPLAR", "SIX" };
-        public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string, float>[6];
-        public Dictionary<string, float> BaseAttributes = new Dictionary<string, float>()
-                                                              {
-                                                                  {"+# to maximum Mana",36},
-                                                                  {"+# to maximum Life",45},
-                                                                  {"Evasion Rating: #",50},
-                                                                  {"+# Maximum Endurance Charge",2},
-                                                                  {"+# Maximum Frenzy Charge",2},
-                                                                  {"+# Maximum Power Charge",2},
-                                                                  {"#% Additional Elemental Resistance per Endurance Charge",5},
-                                                                  {"#% Physical Damage Reduction per Endurance Charge",5},
-                                                                  {"#% Attack Speed Increase per Frenzy Charge",5},
-                                                                  {"#% Cast Speed Increase per Frenzy Charge",5},
-                                                                  {"#% Critical Strike Chance Increase per Power Charge",50},
-                                                              };
-
-        public static float LifePerLevel = 5;
-        public static float ManaPerLevel = 4;
-        public static float IntPerMana = 2;
-        public static float IntPerES = 5; //%
-        public static float StrPerLife = 2;
-        public static float StrPerED = 5; //%
-        public static float DexPerAcc = 0.5f;
-        public static float DexPerEvas = 5; //%
         public Dictionary<string, List<float>> ImplicitAttributes(Dictionary<string, List<float>> attribs)
         {
             Dictionary<string, List<float>> retval = new Dictionary<string, List<float>>();
@@ -466,16 +277,11 @@ namespace POESKillTree
             retval["Evasion Rating: #"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerEvas };
             return retval;
         }
-
-
-
-        private int level = 1;
         public int Level
         {
             get { return level; }
             set { level = value; }
         }
-        private int chartype = 0;
         public int Chartype
         {
             get { return chartype; }
@@ -483,25 +289,11 @@ namespace POESKillTree
             {
 
                 chartype = value;
+                SkilledNodes.Clear();
+                var node = Skillnodes.First(nd => nd.Value.name == CharName[chartype]);
+                SkilledNodes.Add(node.Value.id);
+                UpdateAvailNodes();
                 DrawFaces();
-            }
-        }
-        private SkillNode CharacterNode;
-
-        public HashSet<int> SkilledNodes = new HashSet<int>();
-        public HashSet<int> AvailNodes = new HashSet<int>();
-
-        public void DrawFaces()
-        {
-            using (DrawingContext dc = picFaces.RenderOpen())
-            {
-                for (int i = 0; i < CharName.Count; i++)
-                {
-                    var s = CharName[i];
-                    var pos = Skillnodes.First(nd => nd.Value.name == s).Value.Position;
-                    dc.DrawRectangle(StartBackgrounds[Chartype == i].Value, null, new Rect(pos - new Vector2D(StartBackgrounds[Chartype == i].Key.Width, StartBackgrounds[Chartype == i].Key.Height), pos + new Vector2D(StartBackgrounds[Chartype == i].Key.Width, StartBackgrounds[Chartype == i].Key.Height)));
-                    dc.DrawRectangle(FacesBrush[i].Value, null, new Rect(pos - new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height), pos + new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height)));
-                }
             }
         }
         public List<int> GetShortestPathTo(int targetNode)
@@ -557,44 +349,6 @@ namespace POESKillTree
 
             return result;
         }
-        public void DrawPath(List<int> path)
-        {
-            Pen pen2 = new Pen(Brushes.LawnGreen, 15f);
-            pen2.DashStyle = new DashStyle(new DoubleCollection() { 2 }, 2);
-
-            using (DrawingContext dc = picPathOverlay.RenderOpen())
-            {
-                for (int i = -1; i < path.Count - 1; i++)
-                {
-                    SkillNode n1 = i == -1 ? Skillnodes[path[i + 1]].Neighbor.First(sn => SkilledNodes.Contains(sn.id)) : Skillnodes[path[i]];
-                    SkillNode n2 = Skillnodes[path[i + 1]];
-
-                    DrawConnection(dc, pen2, n1, n2);
-                }
-            }
-        }
-        public void DrawRefundPreview(HashSet<int> nodes)
-        {
-            Pen pen2 = new Pen(Brushes.Red, 15f);
-            pen2.DashStyle = new DashStyle(new DoubleCollection() { 2 }, 2);
-
-            using (DrawingContext dc = picPathOverlay.RenderOpen())
-            {
-                foreach (int node in nodes)
-                {
-                    foreach (SkillNode n2 in Skillnodes[node].Neighbor)
-                    {
-                        if (SkilledNodes.Contains(n2.id) && (node < n2.id || !(nodes.Contains(n2.id))))
-                            DrawConnection(dc, pen2, Skillnodes[node], n2);
-                    }
-                }
-            }
-
-        }
-        public void ClearPath()
-        {
-            picPathOverlay.RenderOpen().Close();
-        }
         public HashSet<int> ForceRefundNodePreview(int nodeId)
         {
             if (!SkilledNodes.Remove(nodeId)) return new HashSet<int>();
@@ -635,7 +389,7 @@ namespace POESKillTree
         {
             if (!SkilledNodes.Remove(nodeId)) throw new InvalidOperationException();
 
-            SkilledNodes.Remove(nodeId);
+            //SkilledNodes.Remove(nodeId);
 
             HashSet<int> front = new HashSet<int>();
             front.Add(SkilledNodes.First());
@@ -660,15 +414,7 @@ namespace POESKillTree
             SkilledNodes = skilled_reachable;
             AvailNodes = new HashSet<int>();
             UpdateAvailNodes();
-            //foreach (var i in BaseAvailableNodes[Class])
-            //    if (!SkilledNodes.Contains(i))
-            //        AvailableNodes.Add(i);
-            //foreach (var i in SkilledNodes)
-            //    foreach (var j in Skilltree.Nodes[i].Connections)
-            //        if (!SkilledNodes.Contains(j))
-            //            AvailableNodes.Add(j);
         }
-        string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
         public void LoadFromURL(string url)
         {
             string s = url.Substring(TreeAddress.Length).Replace("-", "+").Replace("_", "/");
@@ -749,30 +495,6 @@ namespace POESKillTree
             // picActiveLinks.Clear();
             DrawNodeSurround();
         }
-        private void DrawConnection(DrawingContext dc, Pen pen2, SkillNode n1, SkillNode n2)
-        {
-            if (n1.NodeGroup == n2.NodeGroup && n1.orbit == n2.orbit)
-            {
-                if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc < Math.PI ||
-                    n1.Arc - n2.Arc < -Math.PI)
-                {
-                    dc.DrawArc(null, pen2, n1.normPos, n2.normPos,
-                               new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                        SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                }
-                else
-                {
-                    dc.DrawArc(null, pen2, n2.normPos, n1.normPos,
-                               new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                        SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                }
-            }
-            else
-            {
-                dc.DrawLine(pen2, n1.normPos, n2.normPos);
-            }
-        }
-        public HashSet<int[]> Links = new HashSet<int[]>();
         public Dictionary<string, List<float>> SelectedAttributes
         {
             get
@@ -843,24 +565,6 @@ namespace POESKillTree
                 return temp;
             }
         }
-
-
-
-        public void DrawHighlights(List<SkillNode> nodes)
-        {
-            Pen hpen = new Pen(Brushes.Aqua, 20);
-            using (DrawingContext dc = picHighlights.RenderOpen())
-            {
-                foreach (SkillNode node in nodes)
-                {
-                    dc.DrawEllipse(null, hpen, node.Position, 80, 80);
-                }
-            }
-        }
-
-        public Rect2D TRect = new Rect2D();
-        public float scaleFactor = 1;
-
         public class SkillIcons
         {
             enum Detail
@@ -888,7 +592,6 @@ namespace POESKillTree
                 }
             }
         }
-
         public class NodeGroup
         {
             public Vector2D Position;// "x": 1105.14,"y": -5295.31,
@@ -896,7 +599,6 @@ namespace POESKillTree
             public List<int> Nodes = new List<int>();// "n": [-28194677,769796679,-1093139159]
 
         }
-
         public class SkillNode
         {
             static public float[] skillsPerOrbit = { 1, 6, 12, 12, 12 };
@@ -920,17 +622,9 @@ namespace POESKillTree
             public int da;// "da": 0,
             public int ia;//"ia": 0,
             public List<int> linkID = new List<int>();// "out": []
+
             public List<SkillNode> Neighbor = new List<SkillNode>();
             public NodeGroup NodeGroup;
-            public Vector2D normPos;
-            public double arc
-            {
-                get
-                {
-                    Vector2D v = normPos - NodeGroup.Position;
-                    return Math.Atan2(v.Y, v.X);
-                }
-            }
             public Vector2D Position
             {
                 get
@@ -945,8 +639,6 @@ namespace POESKillTree
                 get { return (2 * Math.PI * this.orbitIndex / skillsPerOrbit[this.orbit]); }
             }
         }
-
-
         public class Asset
         {
             public string Name;
@@ -970,9 +662,64 @@ namespace POESKillTree
             }
 
         }
-        Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
+
+        public void HighlightNodes(string search, bool useregex  )
+        {
+            if (search == "")
+            {
+                DrawHighlights(highlightnodes= new List<SkillTree.SkillNode>());
+                highlightnodes = null;
+                return;
+            }
+
+            if (useregex)
+            {
+                try
+                {
+                    List<SkillTree.SkillNode> nodes = highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => new Regex(search, RegexOptions.IgnoreCase).IsMatch(att)).Count() > 0 || new Regex(search, RegexOptions.IgnoreCase).IsMatch(nd.name)).ToList();
+                    DrawHighlights(highlightnodes);
+                }
+                catch (Exception)
+                { }
+
+            }
+            else
+            {
+                highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => att.ToLower().Contains(search.ToLower())).Count() != 0 || nd.name.ToLower().Contains(search.ToLower())).ToList();
+                DrawHighlights(highlightnodes);
+            }
+        }
+        public void SkillAllHighligtedNodes()
+        {
+            if (highlightnodes == null) return;
+            HashSet<int> nodes = new HashSet<int>();
+            foreach (var nd in highlightnodes)
+            {
+                nodes.Add(nd.id);
+            }
+            SkillStep(nodes);
+
+        }
+        private HashSet<int> SkillStep(HashSet<int> hs)
+        {
+            List<List<int>> pathes = new List<List<int>>();
+            foreach (var nd in highlightnodes)
+            {
+                pathes.Add(GetShortestPathTo(nd.id));
 
 
+            }
+            pathes.Sort((p1, p2) => p1.Count.CompareTo(p2.Count));
+            pathes.RemoveAll(p => p.Count == 0);
+            foreach (int i in pathes[0])
+            {
+                hs.Remove(i);
+                SkilledNodes.Add(i);
+            }
+            UpdateAvailNodes();
+
+            return hs.Count == 0 ? hs : SkillStep(hs);
+        }
 
     }
 
