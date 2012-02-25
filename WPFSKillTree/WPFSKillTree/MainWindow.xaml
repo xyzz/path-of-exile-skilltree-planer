@@ -1,7 +1,7 @@
 ﻿<Window x:Class="POESKillTree.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:WPFSKillTree="clr-namespace:WPFSKillTree"
-        xmlns:POESKillTree="clr-namespace:POESKillTree" Title="MainWindow" Height="639" Width="1228" SizeChanged="Window_SizeChanged" Closing="Window_Closing">
+        xmlns:POESKillTree="clr-namespace:POESKillTree" Title="MainWindow" Height="639" Width="1228" SizeChanged="Window_SizeChanged" Closing="Window_Closing" Icon="/POESKillTree;component/naja.ico">
     <Window.Resources>
         <Style x:Key="ContainerStyle" TargetType="{x:Type GroupItem}">
             <Setter Property="Template">
