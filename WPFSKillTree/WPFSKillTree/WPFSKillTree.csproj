@@ -117,6 +117,7 @@
     <Compile Include="Rect2D.cs" />
     <Compile Include="SkillTree-Drawing.cs" />
     <Compile Include="SkillTree.cs" />
+    <Compile Include="SkillTreeImporter.cs" />
     <Compile Include="Vector2D.cs" />
     <Compile Include="ZoomBorder.cs" />
     <Page Include="MainWindow.xaml">
