@@ -277,9 +277,13 @@ namespace POESKillTree
         string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
         private void button2_Click( object sender, RoutedEventArgs e )
         {
-            SkillTreeImporter.LoadBuildFromPoezone( null, "http://poezone.ru/skilltree/#iV" );
+            if ( tbSkillURL.Text.Contains( "poezone.ru" ) )
+            {
+                SkillTreeImporter.LoadBuildFromPoezone( Tree, tbSkillURL.Text );
+                tbSkillURL.Text = Tree.SaveToURL( );
+            }
+            else Tree.LoadFromURL( tbSkillURL.Text );
 
-            Tree.LoadFromURL( tbSkillURL.Text );
             justLoaded = true;
             cbCharType.SelectedIndex = Tree.Chartype;
             UpdateAllAttributeList( );
