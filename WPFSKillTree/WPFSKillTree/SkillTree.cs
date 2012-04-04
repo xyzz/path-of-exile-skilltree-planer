@@ -22,8 +22,8 @@ namespace POESKillTree
         // public Bitmap iconActiveSkills;
         public SkillIcons iconInActiveSkills = new SkillIcons();
         public SkillIcons iconActiveSkills = new SkillIcons();
-        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normalA", "PSSkillFrameActive" }, { "normal", "PSSkillFrame" }, { "notable", "imgNotableBackgroundNormal" }, { "keystone", "imgKeystoneBackgroundNormal" } };
-        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSKillFrameActive" }, { "notable", "imgNotableBackgroundHighlight" }, { "keystone", "imgKeystoneBackgroundHighlight" } };
+        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normal", "PSSkillFrame" }, { "notable", "NotableFrameUnallocated" }, { "keystone", "KeystoneFrameUnallocated" } };
+        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSkillFrameActive" }, { "notable", "NotableFrameAllocated" }, { "keystone", "KeystoneFrameAllocated" } };
         public List<string> FaceNames = new List<string>() { "PSFaceStr", "PSFaceDex", "PSFaceInt", "PSFaceStrDex", "PSFaceStrInt", "PSFaceDexInt" };
         public List<string> CharName = new List<string>() { "MARAUDER", "RANGER", "WITCH", "DUELIST", "TEMPLAR", "SIX" };
         public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string, float>[6];
@@ -32,9 +32,9 @@ namespace POESKillTree
                                                                   {"+# to maximum Mana",36},
                                                                   {"+# to maximum Life",45},
                                                                   {"Evasion Rating: #",50},
-                                                                  {"+# Maximum Endurance Charge",2},
-                                                                  {"+# Maximum Frenzy Charge",2},
-                                                                  {"+# Maximum Power Charge",2},
+                                                                  {"+# Maximum Endurance Charge",3},
+                                                                  {"+# Maximum Frenzy Charge",3},
+                                                                  {"+# Maximum Power Charge",3},
                                                                   {"#% Additional Elemental Resistance per Endurance Charge",5},
                                                                   {"#% Physical Damage Reduction per Endurance Charge",5},
                                                                   {"#% Attack Speed Increase per Frenzy Charge",5},
@@ -117,6 +117,18 @@ namespace POESKillTree
                     iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
                                                                           o["w"].Value<int>(), o["h"].Value<int>());
                 }
+                foreach (string s in ((RavenJObject)(jobj["notableCoords"])).Keys)
+                {
+                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["notableCoords"])[s]);
+                    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
+                                                                          o["w"].Value<int>(), o["h"].Value<int>());
+                }
+                foreach (string s in ((RavenJObject)(jobj["keystoneCoords"])).Keys)
+                {
+                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["keystoneCoords"])[s]);
+                    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
+                                                                          o["w"].Value<int>(), o["h"].Value<int>());
+                }
                 qindex++;
             }
             qindex = 0;
@@ -135,10 +147,10 @@ namespace POESKillTree
 
             foreach (string s in ((RavenJObject)(jObject["assets"])).Keys)
             {
-                if (((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.4794"].Value<string>() == null)
+                if (((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.3835"].Value<string>() == null)
                     continue;
                 assets[s] = new Asset(s,
-                                      ((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.4794"].Value
+                                      ((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.3835"].Value
                                           <string>());
             }
             iconActiveSkills.OpenOrDownloadImages();

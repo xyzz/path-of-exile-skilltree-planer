@@ -25,7 +25,7 @@ namespace POESKillTree
         public Dictionary<bool, KeyValuePair<Rect, ImageBrush>> StartBackgrounds = new Dictionary<bool, KeyValuePair<Rect, ImageBrush>>();
         public List<KeyValuePair<Size, ImageBrush>> NodeSurroundBrush = new List<KeyValuePair<Size, ImageBrush>>();
         public List<KeyValuePair<Rect, ImageBrush>> FacesBrush = new List<KeyValuePair<Rect, ImageBrush>>();
-  
+
         public void CreateCombineVisual()
         {
             SkillTreeVisual = new DrawingVisual();
@@ -33,9 +33,9 @@ namespace POESKillTree
             SkillTreeVisual.Children.Add(picLinks);
             SkillTreeVisual.Children.Add(picActiveLinks);
             SkillTreeVisual.Children.Add(picPathOverlay);
+            SkillTreeVisual.Children.Add(picSkillIconLayer);
             SkillTreeVisual.Children.Add(picSkillBaseSurround);
             SkillTreeVisual.Children.Add(picSkillSurround);
-            SkillTreeVisual.Children.Add(picSkillIconLayer);
             SkillTreeVisual.Children.Add(picFaces);
             SkillTreeVisual.Children.Add(picHighlights);
         }
@@ -63,7 +63,7 @@ namespace POESKillTree
                 (OrbitBrush[2] as ImageBrush).TileMode = TileMode.FlipXY;
                 (OrbitBrush[2] as ImageBrush).Viewport = new Rect(0, 0, 1, .5f);
 
-                ImageBrush BackgroundBrush = new ImageBrush(assets["imgPanelBackground"].PImage);
+                ImageBrush BackgroundBrush = new ImageBrush(assets["Background1"].PImage);
                 BackgroundBrush.TileMode = TileMode.FlipXY;
                 dc.DrawRectangle(BackgroundBrush, null, TRect);
                 foreach (var ngp in NodeGroups)
@@ -157,12 +157,12 @@ namespace POESKillTree
                     dc.DrawEllipse(br, null, pos, r.Width, r.Height);
                 }
             }
-          
+
         }
         private void InitNodeSurround()
         {
             picSkillSurround = new DrawingVisual();
-            picSkillBaseSurround= new DrawingVisual();
+            picSkillBaseSurround = new DrawingVisual();
             Size sizeNot;
             ImageBrush brNot = new ImageBrush();
             brNot.Stretch = Stretch.Uniform;
@@ -203,7 +203,7 @@ namespace POESKillTree
             Size isizeNormA;
             ImageBrush brNormA = new ImageBrush();
             brNormA.Stretch = Stretch.Uniform;
-            BitmapImage PImageNormA = assets[nodeBackgrounds["normalA"]].PImage;
+            BitmapImage PImageNormA = assets[nodeBackgroundsActive["normal"]].PImage;
             brNormA.ImageSource = PImageNormA;
             isizeNormA = new Size(PImageNormA.PixelWidth, PImageNormA.PixelHeight);
 
@@ -222,28 +222,29 @@ namespace POESKillTree
                 foreach (var skillNode in Skillnodes.Keys)
                 {
                     Vector2D pos = (Skillnodes[skillNode].Position);
-                   
+
                     if (Skillnodes[skillNode].not)
                     {
                         dc.DrawRectangle(NodeSurroundBrush[3].Value, null,
-                                         new Rect((int) pos.X - NodeSurroundBrush[3].Key.Width,
-                                                  (int) pos.Y - NodeSurroundBrush[3].Key.Height,
-                                                  NodeSurroundBrush[3].Key.Width*2,
-                                                  NodeSurroundBrush[3].Key.Height*2));
+                                         new Rect((int)pos.X - NodeSurroundBrush[3].Key.Width,
+                                                  (int)pos.Y - NodeSurroundBrush[3].Key.Height,
+                                                  NodeSurroundBrush[3].Key.Width * 2,
+                                                  NodeSurroundBrush[3].Key.Height * 2));
                     }
                     else if (Skillnodes[skillNode].ks)
                     {
                         dc.DrawRectangle(NodeSurroundBrush[2].Value, null,
-                                         new Rect((int) pos.X - NodeSurroundBrush[2].Key.Width,
-                                                  (int) pos.Y - NodeSurroundBrush[2].Key.Height,
-                                                  NodeSurroundBrush[2].Key.Width*2,
-                                                  NodeSurroundBrush[2].Key.Height*2));
+                                         new Rect((int)pos.X - NodeSurroundBrush[2].Key.Width,
+                                                  (int)pos.Y - NodeSurroundBrush[2].Key.Height,
+                                                  NodeSurroundBrush[2].Key.Width * 2,
+                                                  NodeSurroundBrush[2].Key.Height * 2));
                     }
-                    dc.DrawRectangle(NodeSurroundBrush[0].Value, null,
-                                    new Rect((int)pos.X - NodeSurroundBrush[0].Key.Width,
-                                             (int)pos.Y - NodeSurroundBrush[0].Key.Height,
-                                             NodeSurroundBrush[0].Key.Width * 2,
-                                             NodeSurroundBrush[0].Key.Height * 2));
+                    else
+                        dc.DrawRectangle(NodeSurroundBrush[0].Value, null,
+                                        new Rect((int)pos.X - NodeSurroundBrush[0].Key.Width,
+                                                 (int)pos.Y - NodeSurroundBrush[0].Key.Height,
+                                                 NodeSurroundBrush[0].Key.Width * 2,
+                                                 NodeSurroundBrush[0].Key.Height * 2));
                 }
             }
         }
@@ -255,7 +256,7 @@ namespace POESKillTree
                 foreach (var skillNode in SkilledNodes)
                 {
                     Vector2D pos = (Skillnodes[skillNode].Position);
-                   
+
                     if (Skillnodes[skillNode].not)
                     {
                         dc.DrawRectangle(NodeSurroundBrush[5].Value, null,
@@ -272,12 +273,13 @@ namespace POESKillTree
                                                   NodeSurroundBrush[4].Key.Width * 2,
                                                   NodeSurroundBrush[4].Key.Height * 2));
                     }
-                    dc.DrawRectangle(NodeSurroundBrush[1].Value, null,
-                                    new Rect((int)pos.X - NodeSurroundBrush[1].Key.Width,
-                                             (int)pos.Y - NodeSurroundBrush[1].Key.Height,
-                                             NodeSurroundBrush[1].Key.Width * 2,
-                                             NodeSurroundBrush[1].Key.Height * 2));
-                   
+                    else
+                        dc.DrawRectangle(NodeSurroundBrush[1].Value, null,
+                                        new Rect((int)pos.X - NodeSurroundBrush[1].Key.Width,
+                                                 (int)pos.Y - NodeSurroundBrush[1].Key.Height,
+                                                 NodeSurroundBrush[1].Key.Width * 2,
+                                                 NodeSurroundBrush[1].Key.Height * 2));
+
                 }
             }
         }

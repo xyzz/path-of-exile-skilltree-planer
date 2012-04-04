@@ -143,8 +143,8 @@ namespace POESKillTree
                 {
                     get
                     {
-                        return (itemclass != Item.ItemClass.Amulet || itemclass != Item.ItemClass.Ring) &&
-                               (Attribute.Contains("increased Physical Damage") ||
+                        return (itemclass != Item.ItemClass.Amulet && itemclass != Item.ItemClass.Ring) &&
+                              (Attribute.Contains("increased Physical Damage") ||
                                 Attribute.Contains("Armour") ||
                                 Attribute.Contains("Evasion") ||
                                 Attribute.Contains("Energy Shield"));
@@ -182,6 +182,8 @@ namespace POESKillTree
                         for (int i = 0; i < xml.AttributeCount; i++)
                         {
                             string s = xml.GetAttribute(i);
+                            if (s == "socketPopups")
+                                return this;
                             if (s.Contains("itemName"))
                             {
                                 var xs = xml.ReadSubtree();
@@ -229,7 +231,8 @@ namespace POESKillTree
                                 {
                                     if (xs.NodeType == XmlNodeType.Text)
                                     {
-                                        Mods.AddRange( Mod.CreateMods(xs.Value.Replace("Additional ", ""), this.Class));
+                                        var mods = Mod.CreateMods(xs.Value.Replace("Additional ", ""), this.Class);
+                                        Mods.AddRange(mods );
                                     }
                                 }
 
@@ -319,12 +322,13 @@ namespace POESKillTree
                     for (int i = 0; i < xml.AttributeCount; i++)
                     {
                         string s = xml.GetAttribute(i);
-                        if (s == "itemPopupContainer pFix")
+                        if (s == "itemContainer pFix itemNotInline itemContainerNotVerified")
                         {
                             item = new Item(iclass).XmlRead(xml.ReadSubtree());
                         }
                         if (s == "itemPopupContainer pFix hidden itemGemPopup")
                         {
+                            
                             item.Gems.Add(new Item(Item.ItemClass.Gem).XmlRead(xml.ReadSubtree()));
                         }
                     }
@@ -339,69 +343,41 @@ namespace POESKillTree
             RavenJObject jObject = RavenJObject.Parse(File.ReadAllText(path));
             foreach (RavenJObject jobj in (RavenJArray)jObject["items"])
             {
+                string html = jobj["html"].Value<string>();
+                html =
+                    html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", " ").Replace("\\t", " ").Replace(
+                        "\\r", "").Replace("e\"", "e\" ").Replace("\"style", "\" style");
                 string id = jobj["inventory_id"].Value<string>();
                 if (id == "BodyArmour")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
                     AddItem(html, Item.ItemClass.Armor);
                 }
                 if (id == "Ring" || id == "Ring2")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.Ring);
+                  AddItem(html, Item.ItemClass.Ring);
                 }
                 if (id == "Gloves")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.Gloves);
+                   AddItem(html, Item.ItemClass.Gloves);
                 }
                 if (id == "Weapon")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.MainHand);
+                   AddItem(html, Item.ItemClass.MainHand);
                 }
                 if (id == "Offhand")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.OffHand);
+                   AddItem(html, Item.ItemClass.OffHand);
                 }
                 if (id == "Helm")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.Helm);
+                   AddItem(html, Item.ItemClass.Helm);
                 }
                 if (id == "Boots")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
-                    AddItem(html, Item.ItemClass.Boots);
+                   AddItem(html, Item.ItemClass.Boots);
                 }
                 if (id == "Amulet")
                 {
-                    string html = jobj["html"].Value<string>();
-                    html =
-                        html.Replace("\\\"", "\"").Replace("\\/", "/").Replace("\\n", "").Replace("\\t", "").Replace(
-                            "\\r", "").Replace("e\"", "e\" ");
                     AddItem(html, Item.ItemClass.Amulet);
                 }
 

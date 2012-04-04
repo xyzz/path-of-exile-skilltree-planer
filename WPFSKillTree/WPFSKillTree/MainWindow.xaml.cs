@@ -385,17 +385,17 @@ namespace POESKillTree
                 return;
             }
 
-            try
-            {
+           // try
+           // {
                 ItemAttributes = new ItemAttributes( "Data\\get-items" );
                 lbItemAttr.ItemsSource = ItemAttributes.Attributes;
                 UpdateAllAttributeList( );
-            }
-            catch ( Exception er )
-            {
-                MessageBoxResult result = MessageBox.Show( "Your ItemData is invalid.\nYou  either tried to download the data for a character not on your account or you were not logged in while downloading it" );
-                popup1.IsOpen = true;
-            }
+            //}
+            //catch ( Exception er )
+            //{
+            //    MessageBoxResult result = MessageBox.Show( "Your ItemData is invalid.\nYou  either tried to download the data for a character not on your account or you were not logged in while downloading it" );
+            //    popup1.IsOpen = true;
+            //}
             // lbItemAttr.Items.Clear();
 
 
