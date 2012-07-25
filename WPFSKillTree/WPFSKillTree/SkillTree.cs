@@ -265,25 +265,25 @@ namespace POESKillTree
 
                     }
                     string cs = (regexAttrib.Replace(s, "#"));
-                    if (cs == "#% increased Elemental Damage")
-                    {
-                        skillNode.Value.Attributes["#% increased Fire Damage"] = values;
-                        skillNode.Value.Attributes["#% increased Cold Damage"] = values;
-                        skillNode.Value.Attributes["#% increased Lightning Damage"] = values;
-                    }
-                    else if (cs=="#% increased Elemental Damage with Weapons")
-                    {
-                        skillNode.Value.Attributes["#% increased Fire Damage with Weapons"] = values;
-                        skillNode.Value.Attributes["#% increased Cold Damage with Weapons"] = values;
-                        skillNode.Value.Attributes["#% increased Lightning Damage with Weapons"] = values;
-                    }
-                    else if (cs == "+#% to all Elemental Resistances")
-                    {
-                        skillNode.Value.Attributes["+#% to Fire Resistance"] = values;
-                        skillNode.Value.Attributes["+#% to Cold Resistance"] = values;
-                        skillNode.Value.Attributes["+#% to Lightning Resistance"] = values;
-                    }
-                    else
+                    //if (cs == "#% increased Elemental Damage")
+                    //{
+                    //    skillNode.Value.Attributes["#% increased Fire Damage"] = values;
+                    //    skillNode.Value.Attributes["#% increased Cold Damage"] = values;
+                    //    skillNode.Value.Attributes["#% increased Lightning Damage"] = values;
+                    //}
+                    //else if (cs=="#% increased Elemental Damage with Weapons")
+                    //{
+                    //    skillNode.Value.Attributes["#% increased Fire Damage with Weapons"] = values;
+                    //    skillNode.Value.Attributes["#% increased Cold Damage with Weapons"] = values;
+                    //    skillNode.Value.Attributes["#% increased Lightning Damage with Weapons"] = values;
+                    //}
+                    //else if (cs == "+#% to all Elemental Resistances")
+                    //{
+                    //    skillNode.Value.Attributes["+#% to Fire Resistance"] = values;
+                    //    skillNode.Value.Attributes["+#% to Cold Resistance"] = values;
+                    //    skillNode.Value.Attributes["+#% to Lightning Resistance"] = values;
+                    //}
+                    //else
                     {
                         skillNode.Value.Attributes[cs] = values;
                     }

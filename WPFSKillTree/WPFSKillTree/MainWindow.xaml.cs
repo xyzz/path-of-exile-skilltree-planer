@@ -37,25 +37,25 @@ namespace POESKillTree
 
             Thread.CurrentThread.SetApartmentState( ApartmentState.STA );
             Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-            AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
-            {
+            //AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
+            //{
 
-                String resourceName = "POESKillTree." +
+            //    String resourceName = "POESKillTree." +
 
-                   new AssemblyName( args.Name ).Name + ".dll";
+            //       new AssemblyName( args.Name ).Name + ".dll";
 
-                using ( var stream = Assembly.GetExecutingAssembly( ).GetManifestResourceStream( resourceName ) )
-                {
+            //    using ( var stream = Assembly.GetExecutingAssembly( ).GetManifestResourceStream( resourceName ) )
+            //    {
 
-                    Byte[] assemblyData = new Byte[ stream.Length ];
+            //        Byte[] assemblyData = new Byte[ stream.Length ];
 
-                    stream.Read( assemblyData, 0, assemblyData.Length );
+            //        stream.Read( assemblyData, 0, assemblyData.Length );
 
-                    return Assembly.Load( assemblyData );
+            //        return Assembly.Load( assemblyData );
 
-                }
+            //    }
 
-            };
+            //};
 
             InitializeComponent( );
             AttibuteCollection = new ListCollectionView( attiblist );
