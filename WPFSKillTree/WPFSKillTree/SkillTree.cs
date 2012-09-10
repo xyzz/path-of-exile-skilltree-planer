@@ -42,6 +42,7 @@ namespace POESKillTree
                                                                   {"#% Critical Strike Chance Increase per Power Charge",50},
                                                               };
         public static float LifePerLevel = 5;
+        public static float EvasPerLevel = 3;
         public static float ManaPerLevel = 4;
         public static float IntPerMana = 2;
         public static float IntPerES = 5; //%
@@ -107,42 +108,51 @@ namespace POESKillTree
 
 
 
-            foreach (RavenJObject jobj in ((RavenJArray)((RavenJObject)jObject["skillSprites"])["active"]))
+            foreach (var obj in (((RavenJObject)jObject["skillSprites"])))
             {
-                iconActiveSkills.SkillPositions[qindex] = new Dictionary<string, Rect>();
-                iconActiveSkills.Filename[qindex] = jobj["filename"].Value<string>();
-                foreach (string s in ((RavenJObject)(jobj["coords"])).Keys)
+                if (obj.Key.Contains("inactive"))continue;
+                RavenJObject jobj = (RavenJObject)((RavenJArray)(obj.Value))[3];
+                iconActiveSkills.Images[jobj["filename"].Value<string>()]= null;
+                foreach (string s in ((RavenJObject)jobj["coords"]).Keys)
                 {
-                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
-                    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                                                                          o["w"].Value<int>(), o["h"].Value<int>());
+                     RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
+                     iconActiveSkills.SkillPositions[s] = new KeyValuePair<Rect, string>(new Rect(o["x"].Value<int>(), o["y"].Value<int>(), o["w"].Value<int>(), o["h"].Value<int>()), jobj["filename"].Value<string>());
                 }
-                foreach (string s in ((RavenJObject)(jobj["notableCoords"])).Keys)
-                {
-                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["notableCoords"])[s]);
-                    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                                                                          o["w"].Value<int>(), o["h"].Value<int>());
-                }
-                foreach (string s in ((RavenJObject)(jobj["keystoneCoords"])).Keys)
-                {
-                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["keystoneCoords"])[s]);
-                    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                                                                          o["w"].Value<int>(), o["h"].Value<int>());
-                }
+                //iconActiveSkills.SkillPositions[qindex] = new Dictionary<string, KeyValuePair<Rect,string>>();
+               // iconActiveSkills.Images.Add(jobj[0].Value<string>(),null);
+               // iconActiveSkills.Images.Add(jobj["filename"].Value<string>(), null);
+                //foreach (string s in ((RavenJObject)(jobj["coords"])).Keys)
+                //{
+                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
+                //    //iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
+                //                                                       //   o["w"].Value<int>(), o["h"].Value<int>());
+                //}
+                //foreach (string s in ((RavenJObject)(jobj["notableCoords"])).Keys)
+                //{
+                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["notableCoords"])[s]);
+                //    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
+                //                                                          o["w"].Value<int>(), o["h"].Value<int>());
+                //}
+                //foreach (string s in ((RavenJObject)(jobj["keystoneCoords"])).Keys)
+                //{
+                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["keystoneCoords"])[s]);
+                //    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
+                //                                                          o["w"].Value<int>(), o["h"].Value<int>());
+                //}
                 qindex++;
             }
             qindex = 0;
-            foreach (RavenJObject jobj in ((RavenJArray)((RavenJObject)jObject["skillSprites"])["inactive"]))
+            foreach (var obj in (((RavenJObject)jObject["skillSprites"])))
             {
-                iconInActiveSkills.SkillPositions[qindex] = new Dictionary<string, Rect>();
-                iconInActiveSkills.Filename[qindex] = jobj["filename"].Value<string>();
-                foreach (string s in ((RavenJObject)(jobj["coords"])).Keys)
+                if (obj.Key.Contains("active")) continue;
+                RavenJObject jobj = (RavenJObject) ((RavenJArray) (obj.Value))[3];
+                iconInActiveSkills.Images[jobj["filename"].Value<string>()] = null;
+                foreach (string s in ((RavenJObject) jobj["coords"]).Keys)
                 {
-                    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
-                    iconInActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                                                                            o["w"].Value<int>(), o["h"].Value<int>());
+                    RavenJObject o = (RavenJObject) (((RavenJObject) jobj["coords"])[s]);
+                    iconInActiveSkills.SkillPositions[s] =
+                        new KeyValuePair<Rect, string>(new Rect(o["x"].Value<int>(), o["y"].Value<int>(), o["w"].Value<int>(), o["h"].Value<int>()), jobj["filename"].Value<string>());
                 }
-                qindex++;
             }
 
             foreach (string s in ((RavenJObject)(jObject["assets"])).Keys)
@@ -305,7 +315,8 @@ namespace POESKillTree
             retval["+#% increased Melee Physical Damage"] = new List<float>() { attribs["+# to Strength"][0] / StrPerED };
 
             retval["+# Accuracy Rating"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerAcc };
-            retval["Evasion Rating: #"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerEvas };
+            retval["Evasion Rating: #"] = new List<float>() { level*EvasPerLevel};
+            retval["#% increased Evasion Rating"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerEvas };
             return retval;
         }
         public int Level
@@ -607,28 +618,28 @@ namespace POESKillTree
         }
         public class SkillIcons
         {
-            enum Detail
+            
+            public enum IconType
             {
-                lowest,
-                low,
-                medium,
-                high
+                normal,
+                notable,
+                keystone
             }
 
-            public Dictionary<string, Rect>[] SkillPositions = new Dictionary<string, Rect>[4];
-            public string[] Filename = new String[4];
-            public BitmapImage[] Images = new BitmapImage[4];
+            public Dictionary<string, KeyValuePair<Rect, string>> SkillPositions = new Dictionary<string,KeyValuePair<Rect, string>>();
+            public Dictionary<String,BitmapImage> Images = new Dictionary<string, BitmapImage>();
             public static string urlpath = "http://www.pathofexile.com/image/build-gen/passive-skill-sprite/";
             public void OpenOrDownloadImages()
             {
-                for (int i = 0; i < 4; i++)
+                foreach (var image in Images.Keys.ToArray())
                 {
-                    if (!File.Exists("Data\\Assets\\" + Filename[i]))
-                    {
-                        System.Net.WebClient _WebClient = new System.Net.WebClient();
-                        _WebClient.DownloadFile(urlpath + Filename[i], "Data\\Assets\\" + Filename[i]);
-                    }
-                    Images[i] = new BitmapImage(new Uri("Data\\Assets\\" + Filename[i], UriKind.Relative));
+                        if (!File.Exists("Data\\Assets\\" + image))
+                        {
+                            System.Net.WebClient _WebClient = new System.Net.WebClient();
+                            _WebClient.DownloadFile(urlpath + image, "Data\\Assets\\" + image);
+                        }
+                        Images[image] = new BitmapImage(new Uri("Data\\Assets\\" + image, UriKind.Relative));
+                    
                 }
             }
         }

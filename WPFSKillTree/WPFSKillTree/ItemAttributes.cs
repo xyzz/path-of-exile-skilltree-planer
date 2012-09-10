@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -183,8 +184,15 @@ namespace POESKillTree
                     foreach (RavenJObject obj in (RavenJArray)val["properties"])
                     {
                         List<float> values = new List<float>();
+                        string s = "";
+                      
+                            foreach (RavenJArray jva in (RavenJArray)obj["values"])
+                            {
+                                s += " "+jva[0].Value<string>() ;
+                            }
 
-                        string s = colorcleaner.Replace(obj["value"].Value<string>(), "");
+                            if (s == "") continue;
+                        
                         foreach (Match m in numberfilter.Matches(s))
                         {
                             if (m.Value == "") values.Add(float.NaN);

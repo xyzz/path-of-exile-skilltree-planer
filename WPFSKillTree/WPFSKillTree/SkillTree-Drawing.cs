@@ -146,8 +146,9 @@ namespace POESKillTree
                 {
                     Size isize;
                     ImageBrush br = new ImageBrush();
-                    Rect r = iconActiveSkills.SkillPositions[3][skillNode.Value.icon];
-                    BitmapImage bi = iconActiveSkills.Images[3];
+                    int icontype = skillNode.Value.not ? 1 : skillNode.Value.ks ? 2 : 0;
+                    Rect r = iconActiveSkills.SkillPositions[skillNode.Value.icon].Key;
+                    BitmapImage bi = iconActiveSkills.Images[iconActiveSkills.SkillPositions[skillNode.Value.icon].Value];
                     br.Stretch = Stretch.Uniform;
                     br.ImageSource = bi;
 

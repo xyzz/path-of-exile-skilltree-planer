@@ -58,38 +58,7 @@ namespace POESKillTree
             //};
 
             InitializeComponent( );
-            AttibuteCollection = new ListCollectionView( attiblist );
-
-            listBox1.ItemsSource = AttibuteCollection;
-            // AttibuteCollection.CustomSort = 
-            PropertyGroupDescription pgd = new PropertyGroupDescription( "" );
-            pgd.Converter = new GroupStringConverter( );
-            AttibuteCollection.GroupDescriptions.Add( pgd );
-
-            AllAttributeCollection = new ListCollectionView( allAttributesList );
-            AllAttributeCollection.GroupDescriptions.Add( pgd );
-            lbAllAttr.ItemsSource = AllAttributeCollection;
-
-            Tree = SkillTree.CreateSkillTree( );
-            image1.Fill = new VisualBrush( Tree.SkillTreeVisual );
-
-
-
-            Tree.Chartype = Tree.CharName.IndexOf( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ).ToUpper( ) );
-            Tree.UpdateAvailNodes( );
-            UpdateAllAttributeList( );
-
-            multransform = Tree.TRect.Size / border1.RenderSize.Height;
-            addtransform = Tree.TRect.TopLeft;
-
-            if ( File.Exists( "skilltreeAddress.txt" ) )
-            {
-                string s = File.ReadAllText( "skilltreeAddress.txt" );
-                tbSkillURL.Text = s.Split( '\n' )[ 0 ];
-                tbLevel.Text = s.Split( '\n' )[ 1 ];
-                button2_Click( this, new RoutedEventArgs( ) );
-                justLoaded = false;
-            }
+           
         }
         private void border1_MouseMove( object sender, MouseEventArgs e )
         {
@@ -479,6 +448,42 @@ namespace POESKillTree
 
             image1.Fill = new VisualBrush( Tree.SkillTreeVisual );
 
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            AttibuteCollection = new ListCollectionView(attiblist);
+
+            listBox1.ItemsSource = AttibuteCollection;
+            // AttibuteCollection.CustomSort = 
+            PropertyGroupDescription pgd = new PropertyGroupDescription("");
+            pgd.Converter = new GroupStringConverter();
+            AttibuteCollection.GroupDescriptions.Add(pgd);
+
+            AllAttributeCollection = new ListCollectionView(allAttributesList);
+            AllAttributeCollection.GroupDescriptions.Add(pgd);
+            lbAllAttr.ItemsSource = AllAttributeCollection;
+
+            Tree = SkillTree.CreateSkillTree();
+            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
+
+
+
+            Tree.Chartype = Tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
+            Tree.UpdateAvailNodes();
+            UpdateAllAttributeList();
+
+            multransform = Tree.TRect.Size / border1.RenderSize.Height;
+            addtransform = Tree.TRect.TopLeft;
+
+            if (File.Exists("skilltreeAddress.txt"))
+            {
+                string s = File.ReadAllText("skilltreeAddress.txt");
+                tbSkillURL.Text = s.Split('\n')[0];
+                tbLevel.Text = s.Split('\n')[1];
+                button2_Click(this, new RoutedEventArgs());
+                justLoaded = false;
+            }
         }
     }
 }
