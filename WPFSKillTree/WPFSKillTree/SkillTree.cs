@@ -24,7 +24,7 @@ namespace POESKillTree
         public SkillIcons iconActiveSkills = new SkillIcons();
         public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normal", "PSSkillFrame" }, { "notable", "NotableFrameUnallocated" }, { "keystone", "KeystoneFrameUnallocated" } };
         public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSkillFrameActive" }, { "notable", "NotableFrameAllocated" }, { "keystone", "KeystoneFrameAllocated" } };
-        public List<string> FaceNames = new List<string>() { "PSFaceStr", "PSFaceDex", "PSFaceInt", "PSFaceStrDex", "PSFaceStrInt", "PSFaceDexInt" };
+        public List<string> FaceNames = new List<string>() { "centermarauder", "centerranger", "centerwitch", "centerduelist", "centertemplar", "centershadow" };
         public List<string> CharName = new List<string>() { "MARAUDER", "RANGER", "WITCH", "DUELIST", "TEMPLAR", "SIX" };
         public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string, float>[6];
         public Dictionary<string, float> BaseAttributes = new Dictionary<string, float>()
@@ -189,6 +189,7 @@ namespace POESKillTree
                     ks = token["ks"].Value<bool>(),
                     not = token["not"].Value<bool>(),
                     sa = token["sa"].Value<int>(),
+                    Mastery = token["m"].Value<bool>(),
                 });
             }
             List<int[]> links = new List<int[]>();
@@ -275,28 +276,9 @@ namespace POESKillTree
 
                     }
                     string cs = (regexAttrib.Replace(s, "#"));
-                    //if (cs == "#% increased Elemental Damage")
-                    //{
-                    //    skillNode.Value.Attributes["#% increased Fire Damage"] = values;
-                    //    skillNode.Value.Attributes["#% increased Cold Damage"] = values;
-                    //    skillNode.Value.Attributes["#% increased Lightning Damage"] = values;
-                    //}
-                    //else if (cs=="#% increased Elemental Damage with Weapons")
-                    //{
-                    //    skillNode.Value.Attributes["#% increased Fire Damage with Weapons"] = values;
-                    //    skillNode.Value.Attributes["#% increased Cold Damage with Weapons"] = values;
-                    //    skillNode.Value.Attributes["#% increased Lightning Damage with Weapons"] = values;
-                    //}
-                    //else if (cs == "+#% to all Elemental Resistances")
-                    //{
-                    //    skillNode.Value.Attributes["+#% to Fire Resistance"] = values;
-                    //    skillNode.Value.Attributes["+#% to Cold Resistance"] = values;
-                    //    skillNode.Value.Attributes["+#% to Lightning Resistance"] = values;
-                    //}
-                    //else
-                    {
+                   
                         skillNode.Value.Attributes[cs] = values;
-                    }
+                    
                  
 
                 }
@@ -365,6 +347,7 @@ namespace POESKillTree
                     if (visited.Contains(connection)) continue;
                     if (distance.ContainsKey(connection)) continue;
                     if (CharName.Contains(Skillnodes[connection].name)) continue;
+                    if (Skillnodes[newNode].Mastery) continue;
                     distance.Add(connection, dis + 1);
                     newOnes.Enqueue(connection);
 
@@ -529,7 +512,7 @@ namespace POESKillTree
                     {
                         if (SkilledNodes.Contains(n2.id))
                         {
-                            DrawConnection(dc, pen2, Skillnodes[n1], n2);
+                            DrawConnection(dc, pen2, n2, Skillnodes[n1]);
                         }
                     }
                 }
@@ -673,6 +656,7 @@ namespace POESKillTree
             public int da;// "da": 0,
             public int ia;//"ia": 0,
             public List<int> linkID = new List<int>();// "out": []
+            public bool Mastery;
 
             public List<SkillNode> Neighbor = new List<SkillNode>();
             public NodeGroup NodeGroup;
@@ -727,7 +711,7 @@ namespace POESKillTree
             {
                 try
                 {
-                    List<SkillTree.SkillNode> nodes = highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => new Regex(search, RegexOptions.IgnoreCase).IsMatch(att)).Count() > 0 || new Regex(search, RegexOptions.IgnoreCase).IsMatch(nd.name)).ToList();
+                    List<SkillTree.SkillNode> nodes = highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => new Regex(search, RegexOptions.IgnoreCase).IsMatch(att)).Count() > 0 || new Regex(search, RegexOptions.IgnoreCase).IsMatch(nd.name) && !nd.Mastery).ToList();
                     DrawHighlights(highlightnodes);
                 }
                 catch (Exception)
@@ -736,7 +720,8 @@ namespace POESKillTree
             }
             else
             {
-                highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => att.ToLower().Contains(search.ToLower())).Count() != 0 || nd.name.ToLower().Contains(search.ToLower())).ToList();
+                highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => att.ToLower().Contains(search.ToLower())).Count() != 0 || nd.name.ToLower().Contains(search.ToLower())&& !nd.Mastery).ToList();
+                
                 DrawHighlights(highlightnodes);
             }
         }

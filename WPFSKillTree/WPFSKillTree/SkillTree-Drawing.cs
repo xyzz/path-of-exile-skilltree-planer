@@ -89,13 +89,9 @@ namespace POESKillTree
             }
 
             var bi2 = new BitmapImage(new Uri("Data\\Assets\\PSStartNodeBackgroundInactive.png", UriKind.Relative));
-            var bi3 = new BitmapImage(new Uri("Data\\Assets\\PSStartNodeBackgroundActive.png", UriKind.Relative));
             StartBackgrounds.Add(false,
                                  (new KeyValuePair<Rect, ImageBrush>(new Rect(0, 0, bi2.PixelWidth, bi2.PixelHeight),
                                                                      new ImageBrush(bi2))));
-            StartBackgrounds.Add(true,
-                                 (new KeyValuePair<Rect, ImageBrush>(new Rect(0, 0, bi3.PixelWidth, bi3.PixelHeight),
-                                                                     new ImageBrush(bi3))));
             picFaces = new DrawingVisual();
 
         }
@@ -109,26 +105,26 @@ namespace POESKillTree
                 {
                     var n1 = Skillnodes[nid[0]];
                     var n2 = Skillnodes[nid[1]];
-
-                    if (n1.NodeGroup == n2.NodeGroup && n1.orbit == n2.orbit)
-                    {
-                        if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc < Math.PI || n1.Arc - n2.Arc < -Math.PI)
-                        {
-                            dc.DrawArc(null, pen2, n1.Position, n2.Position,
-                                       new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                                SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                        }
-                        else
-                        {
-                            dc.DrawArc(null, pen2, n2.Position, n1.Position,
-                                       new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
-                                                SkillTree.SkillNode.orbitRadii[n1.orbit]));
-                        }
-                    }
-                    else
-                    {
-                        dc.DrawLine(pen2, n1.Position, n2.Position);
-                    }
+                    DrawConnection(dc, pen2, n1, n2);
+                    //if (n1.NodeGroup == n2.NodeGroup && n1.orbit == n2.orbit)
+                    //{
+                    //    if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc < Math.PI || n1.Arc - n2.Arc < -Math.PI)
+                    //    {
+                    //        dc.DrawArc(null, pen2, n1.Position, n2.Position,
+                    //                   new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
+                    //                            SkillTree.SkillNode.orbitRadii[n1.orbit]));
+                    //    }
+                    //    else
+                    //    {
+                    //        dc.DrawArc(null, pen2, n2.Position, n1.Position,
+                    //                   new Size(SkillTree.SkillNode.orbitRadii[n1.orbit],
+                    //                            SkillTree.SkillNode.orbitRadii[n1.orbit]));
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    dc.DrawLine(pen2, n1.Position, n2.Position);
+                    //}
                 }
             }
         }
@@ -299,7 +295,7 @@ namespace POESKillTree
         {
             if (n1.NodeGroup == n2.NodeGroup && n1.orbit == n2.orbit)
             {
-                if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc < Math.PI ||
+                if (n1.Arc - n2.Arc > 0 && n1.Arc - n2.Arc <= Math.PI ||
                     n1.Arc - n2.Arc < -Math.PI)
                 {
                     dc.DrawArc(null, pen2, n1.Position, n2.Position,
@@ -326,8 +322,12 @@ namespace POESKillTree
                 {
                     var s = CharName[i];
                     var pos = Skillnodes.First(nd => nd.Value.name == s).Value.Position;
-                    dc.DrawRectangle(StartBackgrounds[Chartype == i].Value, null, new Rect(pos - new Vector2D(StartBackgrounds[Chartype == i].Key.Width, StartBackgrounds[Chartype == i].Key.Height), pos + new Vector2D(StartBackgrounds[Chartype == i].Key.Width, StartBackgrounds[Chartype == i].Key.Height)));
-                    dc.DrawRectangle(FacesBrush[i].Value, null, new Rect(pos - new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height), pos + new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height)));
+                    dc.DrawRectangle(StartBackgrounds[false].Value, null, new Rect(pos - new Vector2D(StartBackgrounds[false].Key.Width, StartBackgrounds[false].Key.Height), pos + new Vector2D(StartBackgrounds[false].Key.Width, StartBackgrounds[false].Key.Height)));
+                    if (chartype==i)
+                    {
+                        dc.DrawRectangle(FacesBrush[i].Value, null, new Rect(pos - new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height), pos + new Vector2D(FacesBrush[i].Key.Width, FacesBrush[i].Key.Height)));
+                        
+                    }
                 }
             }
         }
