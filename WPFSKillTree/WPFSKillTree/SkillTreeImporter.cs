@@ -142,7 +142,7 @@ namespace POESKillTree
 
                 var poezonePos = ( positions[ int.Parse( buildResp[ i ] ) ].Value - new Vector2D( minx, miny ) ) * new Vector2D( 1 / ( maxx - minx ), 1 / ( maxy - miny ) );
                 double minDis = 2;
-                KeyValuePair<int, SkillTree.SkillNode> minNode = new KeyValuePair<int, SkillTree.SkillNode>( );
+                KeyValuePair<ushort, SkillTree.SkillNode> minNode = new KeyValuePair<ushort, SkillTree.SkillNode>();
                 foreach ( var node in tree.Skillnodes )
                 {
                     var nodePos = ( node.Value.Position - new Vector2D( nminx, nminy ) ) * new Vector2D( 1 / ( nmaxx - nminx ), 1 / ( nmaxy - nminy ) );

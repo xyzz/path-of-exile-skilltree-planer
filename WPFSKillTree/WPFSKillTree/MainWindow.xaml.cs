@@ -110,8 +110,8 @@ namespace POESKillTree
             }
 
         }
-        private List<int> prePath;
-        private HashSet<int> toRemove;
+        private List<ushort> prePath;
+        private HashSet<ushort> toRemove;
         private bool justLoaded = false;
         private void comboBox1_SelectionChanged( object sender, SelectionChangedEventArgs e )
         {
@@ -158,7 +158,7 @@ namespace POESKillTree
             }
             if ( prePath != null )
             {
-                foreach ( int i in prePath )
+                foreach (ushort i in prePath)
                 {
                     Tree.SkilledNodes.Add( i );
                 }

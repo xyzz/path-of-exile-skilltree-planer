@@ -95,7 +95,7 @@ namespace POESKillTree
             picFaces = new DrawingVisual();
 
         }
-        private void DrawLinkBackgroundLayer(List<int[]> links)
+        private void DrawLinkBackgroundLayer(List<ushort[]> links)
         {
             picLinks = new DrawingVisual();
             Pen pen2 = new Pen(Brushes.DarkSlateGray, 32);
@@ -331,7 +331,7 @@ namespace POESKillTree
                 }
             }
         }
-        public void DrawPath(List<int> path)
+        public void DrawPath(List<ushort> path)
         {
             Pen pen2 = new Pen(Brushes.LawnGreen, 15f);
             pen2.DashStyle = new DashStyle(new DoubleCollection() { 2 }, 2);
@@ -347,14 +347,14 @@ namespace POESKillTree
                 }
             }
         }
-        public void DrawRefundPreview(HashSet<int> nodes)
+        public void DrawRefundPreview(HashSet<ushort> nodes)
         {
             Pen pen2 = new Pen(Brushes.Red, 15f);
             pen2.DashStyle = new DashStyle(new DoubleCollection() { 2 }, 2);
 
             using (DrawingContext dc = picPathOverlay.RenderOpen())
             {
-                foreach (int node in nodes)
+                foreach (ushort node in nodes)
                 {
                     foreach (SkillNode n2 in Skillnodes[node].Neighbor)
                     {

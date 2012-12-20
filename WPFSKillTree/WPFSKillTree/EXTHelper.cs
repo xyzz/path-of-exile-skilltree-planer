@@ -21,5 +21,6 @@ namespace POESKillTree
             // draw the arc
             drawingContext.DrawGeometry(brush, pen, geometry);
         }
+    
     }
 }

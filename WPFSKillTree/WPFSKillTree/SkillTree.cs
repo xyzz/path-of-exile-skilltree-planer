@@ -17,7 +17,7 @@ namespace POESKillTree
     {
         string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
         public List<NodeGroup> NodeGroups = new List<NodeGroup>();
-        public Dictionary<int, SkillNode> Skillnodes = new Dictionary<int, SkillNode>();
+        public Dictionary<UInt16, SkillNode> Skillnodes = new Dictionary<UInt16, SkillNode>();
         public List<string> AttributeTypes = new List<string>();
         // public Bitmap iconActiveSkills;
         public SkillIcons iconInActiveSkills = new SkillIcons();
@@ -53,8 +53,8 @@ namespace POESKillTree
         private List<SkillTree.SkillNode> highlightnodes; 
         private int level = 1;
         private int chartype = 0;
-        public HashSet<int> SkilledNodes = new HashSet<int>();
-        public HashSet<int> AvailNodes = new HashSet<int>();
+        public HashSet<ushort> SkilledNodes = new HashSet<ushort>();
+        public HashSet<ushort> AvailNodes = new HashSet<ushort>();
         Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
         public Rect2D TRect = new Rect2D();
         public float scaleFactor = 1;
@@ -173,9 +173,9 @@ namespace POESKillTree
             }
             foreach (RavenJObject token in jObject["nodes"].Values())
             {
-                Skillnodes.Add(token["id"].Value<int>(), new SkillTree.SkillNode()
+                Skillnodes.Add(token["id"].Value<ushort>(), new SkillTree.SkillNode()
                 {
-                    id = token["id"].Value<int>(),
+                    id = token["id"].Value<UInt16>(),
                     a = token["a"].Value<int>(),
                     name = token["dn"].Value<string>(),
                     attributes = token["sd"].Values<string>().ToArray(),
@@ -192,10 +192,10 @@ namespace POESKillTree
                     Mastery = token["m"].Value<bool>(),
                 });
             }
-            List<int[]> links = new List<int[]>();
+            List<ushort[]> links = new List<ushort[]>();
             foreach (var skillNode in Skillnodes)
             {
-                foreach (int i in skillNode.Value.linkID)
+                foreach (ushort i in skillNode.Value.linkID)
                 {
                     if (
                         links.Count(
@@ -204,10 +204,10 @@ namespace POESKillTree
                     {
                         continue;
                     }
-                    links.Add(new int[] { skillNode.Key, i });
+                    links.Add(new ushort[] { skillNode.Key, i });
                 }
             }
-            foreach (int[] ints in links)
+            foreach (ushort[] ints in links)
             {
                 if (!Skillnodes[ints[0]].Neighbor.Contains(Skillnodes[ints[1]]))
                     Skillnodes[ints[0]].Neighbor.Add(Skillnodes[ints[1]]);
@@ -235,7 +235,7 @@ namespace POESKillTree
             }
             foreach (SkillTree.NodeGroup @group in NodeGroups)
             {
-                foreach (int node in group.Nodes)
+                foreach (ushort node in group.Nodes)
                 {
                     Skillnodes[node].NodeGroup = group;
                 }
@@ -320,14 +320,14 @@ namespace POESKillTree
                 DrawFaces();
             }
         }
-        public List<int> GetShortestPathTo(int targetNode)
+        public List<ushort> GetShortestPathTo(ushort targetNode)
         {
-            if (SkilledNodes.Contains(targetNode)) return new List<int>();
-            if (AvailNodes.Contains(targetNode)) return new List<int>() { targetNode };
-            HashSet<int> visited = new HashSet<int>(SkilledNodes);
+            if (SkilledNodes.Contains(targetNode)) return new List<ushort>();
+            if (AvailNodes.Contains(targetNode)) return new List<ushort>() { targetNode };
+            HashSet<ushort> visited = new HashSet<ushort>(SkilledNodes);
             Dictionary<int, int> distance = new Dictionary<int, int>();
-            Dictionary<int, int> parent = new Dictionary<int, int>();
-            Queue<int> newOnes = new Queue<int>();
+            Dictionary<ushort, ushort> parent = new Dictionary<ushort, ushort>();
+            Queue<ushort> newOnes = new Queue<ushort>();
             foreach (var node in SkilledNodes)
             {
                 distance.Add(node, 0);
@@ -339,7 +339,7 @@ namespace POESKillTree
             }
             while (newOnes.Count > 0)
             {
-                int newNode = newOnes.Dequeue();
+                ushort newNode = newOnes.Dequeue();
                 int dis = distance[newNode];
                 visited.Add(newNode);
                 foreach (var connection in Skillnodes[newNode].Neighbor.Select(nd => nd.id))
@@ -357,10 +357,10 @@ namespace POESKillTree
                 }
             }
 
-            if (!distance.ContainsKey(targetNode)) return new List<int>();
+            if (!distance.ContainsKey(targetNode)) return new List<ushort>();
 
-            Stack<int> path = new Stack<int>();
-            int curr = targetNode;
+            Stack<ushort> path = new Stack<ushort>();
+            ushort curr = targetNode;
             path.Push(curr);
             while (parent.ContainsKey(curr))
             {
@@ -368,28 +368,28 @@ namespace POESKillTree
                 curr = parent[curr];
             }
 
-            List<int> result = new List<int>();
+            List<ushort> result = new List<ushort>();
             while (path.Count > 0)
                 result.Add(path.Pop());
 
             return result;
         }
-        public HashSet<int> ForceRefundNodePreview(int nodeId)
+        public HashSet<ushort> ForceRefundNodePreview(ushort nodeId)
         {
-            if (!SkilledNodes.Remove(nodeId)) return new HashSet<int>();
+            if (!SkilledNodes.Remove(nodeId)) return new HashSet<ushort>();
 
             SkilledNodes.Remove(nodeId);
 
-            HashSet<int> front = new HashSet<int>();
+            HashSet<ushort> front = new HashSet<ushort>();
             front.Add(SkilledNodes.First());
             foreach (var i in Skillnodes[SkilledNodes.First()].Neighbor)
                 if (SkilledNodes.Contains(i.id))
                     front.Add(i.id);
 
-            HashSet<int> skilled_reachable = new HashSet<int>(front);
+            HashSet<ushort> skilled_reachable = new HashSet<ushort>(front);
             while (front.Count > 0)
             {
-                HashSet<int> newFront = new HashSet<int>();
+                HashSet<ushort> newFront = new HashSet<ushort>();
                 foreach (var i in front)
                     foreach (var j in Skillnodes[i].Neighbor.Select(nd => nd.id))
                         if (!skilled_reachable.Contains(j) && SkilledNodes.Contains(j))
@@ -401,7 +401,7 @@ namespace POESKillTree
                 front = newFront;
             }
 
-            HashSet<int> unreachable = new HashSet<int>(SkilledNodes);
+            HashSet<ushort> unreachable = new HashSet<ushort>(SkilledNodes);
             foreach (var i in skilled_reachable)
                 unreachable.Remove(i);
             unreachable.Add(nodeId);
@@ -410,21 +410,21 @@ namespace POESKillTree
 
             return unreachable;
         }
-        public void ForceRefundNode(int nodeId)
+        public void ForceRefundNode(ushort nodeId)
         {
             if (!SkilledNodes.Remove(nodeId)) throw new InvalidOperationException();
 
             //SkilledNodes.Remove(nodeId);
 
-            HashSet<int> front = new HashSet<int>();
+            HashSet<ushort> front = new HashSet<ushort>();
             front.Add(SkilledNodes.First());
             foreach (var i in Skillnodes[SkilledNodes.First()].Neighbor)
                 if (SkilledNodes.Contains(i.id))
                     front.Add(i.id);
-            HashSet<int> skilled_reachable = new HashSet<int>(front);
+            HashSet<ushort> skilled_reachable = new HashSet<ushort>(front);
             while (front.Count > 0)
             {
-                HashSet<int> newFront = new HashSet<int>();
+                HashSet<ushort> newFront = new HashSet<ushort>();
                 foreach (var i in front)
                     foreach (var j in Skillnodes[i].Neighbor.Select(nd => nd.id))
                         if (!skilled_reachable.Contains(j) && SkilledNodes.Contains(j))
@@ -437,7 +437,7 @@ namespace POESKillTree
             }
 
             SkilledNodes = skilled_reachable;
-            AvailNodes = new HashSet<int>();
+            AvailNodes = new HashSet<ushort>();
             UpdateAvailNodes();
         }
         public void LoadFromURL(string url)
@@ -447,19 +447,19 @@ namespace POESKillTree
             var i = BitConverter.ToInt32(new byte[] { decbuff[3], decbuff[2], decbuff[1], decbuff[1] }, 0);
             var b = decbuff[4];
             var j = 0L; if (i > 0) j = decbuff[5];
-            List<int> nodes = new List<int>();
-            for (int k = 6; k < decbuff.Length; k += 4)
+            List<UInt16> nodes = new List<UInt16>();
+            for (int k = 6; k < decbuff.Length; k += 2)
             {
-                byte[] dbff = new byte[] { decbuff[k + 3], decbuff[k + 2], decbuff[k + 1], decbuff[k + 0] };
-                if (Skillnodes.Keys.Contains(BitConverter.ToInt32(dbff, 0)))
-                    nodes.Add((BitConverter.ToInt32(dbff, 0)));
+                byte[] dbff = new byte[] { decbuff[k + 1], decbuff[k + 0] };
+               if (Skillnodes.Keys.Contains(BitConverter.ToUInt16(dbff, 0)))
+                    nodes.Add((BitConverter.ToUInt16(dbff, 0)));
 
             }
             Chartype = b - 1;
             SkilledNodes.Clear();
             SkillTree.SkillNode startnode = Skillnodes.First(nd => nd.Value.name == CharName[Chartype].ToUpper()).Value;
             SkilledNodes.Add(startnode.id);
-            foreach (int node in nodes)
+            foreach (ushort node in nodes)
             {
                 SkilledNodes.Add(node);
             }
@@ -467,21 +467,19 @@ namespace POESKillTree
         }
         public string SaveToURL()
         {
-            byte[] b = new byte[(SkilledNodes.Count - 1) * 4 + 6];
-            var b2 = BitConverter.GetBytes(1);
+            byte[] b = new byte[(SkilledNodes.Count - 1) * 2 + 6];
+            var b2 = BitConverter.GetBytes(2);
             b[0] = b2[3];
             b[1] = b2[2];
             b[2] = b2[1];
             b[3] = b2[0];
             b[4] = (byte)(Chartype + 1);
-            b[5] = (byte)(1);
+            b[5] = (byte)(0);
             int pos = 6;
             foreach (var inn in SkilledNodes)
             {
                 if (CharName.Contains(Skillnodes[inn].name)) continue;
-                byte[] dbff = BitConverter.GetBytes(inn);
-                b[pos++] = dbff[3];
-                b[pos++] = dbff[2];
+                byte[] dbff = BitConverter.GetBytes((Int16)inn);
                 b[pos++] = dbff[1];
                 b[pos++] = dbff[0];
             }
@@ -491,7 +489,7 @@ namespace POESKillTree
         public void UpdateAvailNodes()
         {
             AvailNodes.Clear();
-            foreach (int inode in SkilledNodes)
+            foreach (ushort inode in SkilledNodes)
             {
                 SkillNode node = Skillnodes[inode];
                 foreach (SkillNode skillNode in node.Neighbor)
@@ -575,7 +573,7 @@ namespace POESKillTree
                     }
                 }
 
-                foreach (int inode in SkilledNodes)
+                foreach (ushort inode in SkilledNodes)
                 {
                     SkillNode node = Skillnodes[inode];
                     foreach (var attr in node.Attributes)
@@ -639,7 +637,7 @@ namespace POESKillTree
             static public float[] orbitRadii = { 0, 81.5f, 163, 326, 489 };
             public HashSet<int> Connections = new HashSet<int>();
             public bool skilled = false;
-            public int id; // "id": -28194677,
+            public UInt16 id; // "id": -28194677,
             public string icon;// icon "icon": "Art/2DArt/SkillIcons/passives/tempint.png",
             public bool ks; //"ks": false,
             public bool not;   // not": false,
@@ -738,7 +736,7 @@ namespace POESKillTree
         }
         private HashSet<int> SkillStep(HashSet<int> hs)
         {
-            List<List<int>> pathes = new List<List<int>>();
+            List<List<ushort>> pathes = new List<List<ushort>>();
             foreach (var nd in highlightnodes)
             {
                 pathes.Add(GetShortestPathTo(nd.id));
@@ -747,7 +745,7 @@ namespace POESKillTree
             }
             pathes.Sort((p1, p2) => p1.Count.CompareTo(p2.Count));
             pathes.RemoveAll(p => p.Count == 0);
-            foreach (int i in pathes[0])
+            foreach (ushort i in pathes[0])
             {
                 hs.Remove(i);
                 SkilledNodes.Add(i);
