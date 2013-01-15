@@ -1,7 +1,9 @@
-A fork of path-of-exile-skilltree-planer.
+A fork of path-of-exile-skilltree-planer by "kirstein..." (see contributor list below).
+
+Project page on google code:
 https://code.google.com/p/path-of-exile-skilltree-planer/
 
-No copyright notice found. Owner information:
+Owner information & contributor list:
 https://code.google.com/p/path-of-exile-skilltree-planer/people/list
 
 License: BSD 3
