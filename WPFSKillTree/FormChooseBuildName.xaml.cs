@@ -30,7 +30,7 @@ namespace POESKillTree
 
         public string getBuildName()
         {
-            return "abc";
+            return txtName.Text;
         }
 
         private void FormChooseBuildName_Loaded(object sender, RoutedEventArgs e)
