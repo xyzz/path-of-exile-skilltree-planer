@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Raven.Json.Linq;
 using System.Diagnostics;
 
@@ -66,6 +67,7 @@ namespace POESKillTree
             SkilledNodes.Add(node.Value.id);
             UpdateAvailNodes();
         }
+        static Action emptyDelegate = delegate { };
         public static SkillTree CreateSkillTree()
         {
 
@@ -85,6 +87,10 @@ namespace POESKillTree
 
             if (skilltreeobj == "")
             {
+                LoadingWindow loadingWindow = new LoadingWindow();
+                loadingWindow.Show();
+                //loadingWindow.Dispatcher.Invoke(DispatcherPriority.Background,new Action(delegate { }));
+                loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
 
                 string uriString = "http://www.pathofexile.com/passive-skill-tree/";
                 WebRequest req = WebRequest.Create(uriString);
@@ -95,6 +101,8 @@ namespace POESKillTree
                 skilltreeobj = regex.Match(code).Value.Replace("root", "main").Replace("\\/", "/");
                 skilltreeobj = skilltreeobj.Substring(27, skilltreeobj.Length - 27 - 2) + "";
                 File.WriteAllText("Data\\Skilltree.txt", skilltreeobj);
+
+                loadingWindow.Close();
             }
 
             return new SkillTree(skilltreeobj);
@@ -612,16 +620,27 @@ namespace POESKillTree
             public static string urlpath = "http://www.pathofexile.com/image/build-gen/passive-skill-sprite/";
             public void OpenOrDownloadImages()
             {
+                LoadingWindow loadingWindow = new LoadingWindow();
+                loadingWindow.progressBar1.Maximum = Images.Keys.Count + 1;
+                loadingWindow.Show();
+                //Application
+                int count = 0;
                 foreach (var image in Images.Keys.ToArray())
                 {
+                    //loadingWindow.Dispatcher.Invoke(DispatcherPriority.Background,new Action(delegate { }));
+                    loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
+
                         if (!File.Exists("Data\\Assets\\" + image))
                         {
                             System.Net.WebClient _WebClient = new System.Net.WebClient();
                             _WebClient.DownloadFile(urlpath + image, "Data\\Assets\\" + image);
                         }
                         Images[image] = new BitmapImage(new Uri("Data\\Assets\\" + image, UriKind.Relative));
-                    
+
+                    loadingWindow.progressBar1.Value = count;
+                    ++count;
                 }
+                loadingWindow.Close();
             }
         }
         public class NodeGroup

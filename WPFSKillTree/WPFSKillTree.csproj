@@ -119,6 +119,9 @@
     <Compile Include="Arrow.cs" />
     <Compile Include="EXTHelper.cs" />
     <Compile Include="ItemAttributes.cs" />
+    <Compile Include="LoadingWindow.xaml.cs">
+      <DependentUpon>LoadingWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Point2D.cs" />
     <Compile Include="Rect2D.cs" />
     <Compile Include="SkillTree-Drawing.cs" />
@@ -129,6 +132,10 @@
       <DependentUpon>FormChooseBuildName.xaml</DependentUpon>
     </Compile>
     <Compile Include="ZoomBorder.cs" />
+    <Page Include="LoadingWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
