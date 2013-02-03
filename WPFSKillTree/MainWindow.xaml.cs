@@ -25,7 +25,7 @@ namespace POESKillTree
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<PoEBuild> savedBuilds = new List<PoEBuild>();
+        List<PoEBuild> savedBuilds = new List<PoEBuild>( );
 
         private ItemAttributes ItemAttributes = null;
         SkillTree Tree;
@@ -59,12 +59,12 @@ namespace POESKillTree
             //};
 
             InitializeComponent( );
-           
+
         }
-        private void border1_MouseMove( object sender, MouseEventArgs e )
+        private void border1_MouseMove( object sender , MouseEventArgs e )
         {
             Point p = e.GetPosition( border1.Child );
-            Vector2D v = new Vector2D( p.X, p.Y );
+            Vector2D v = new Vector2D( p.X , p.Y );
             v = v * multransform + addtransform;
             textBox1.Text = "" + v.X;
             textBox2.Text = "" + v.Y;
@@ -77,7 +77,7 @@ namespace POESKillTree
             if ( node != null && node.Attributes.Count != 0 )
             {
 
-                string tooltip = node.name + "\n" + node.attributes.Aggregate( ( s1, s2 ) => s1 + "\n" + s2 );
+                string tooltip = node.name + "\n" + node.attributes.Aggregate( ( s1 , s2 ) => s1 + "\n" + s2 );
                 if ( !( sToolTip.IsOpen == true && lasttooltip == tooltip ) )
                 {
                     sToolTip.Content = tooltip;
@@ -114,7 +114,7 @@ namespace POESKillTree
         private List<ushort> prePath;
         private HashSet<ushort> toRemove;
         private bool justLoaded = false;
-        private void comboBox1_SelectionChanged( object sender, SelectionChangedEventArgs e )
+        private void comboBox1_SelectionChanged( object sender , SelectionChangedEventArgs e )
         {
             if ( justLoaded )
             {
@@ -122,7 +122,8 @@ namespace POESKillTree
                 return;
             }
 
-            if ( Tree == null ) return;
+            if ( Tree == null )
+                return;
             SkillTree.SkillNode startnode = Tree.Skillnodes.First( nd => nd.Value.name == ( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ) ).ToUpper( ) ).Value;
             Tree.SkilledNodes.Clear( );
             Tree.SkilledNodes.Add( startnode.id );
@@ -130,7 +131,7 @@ namespace POESKillTree
             Tree.UpdateAvailNodes( );
             UpdateAllAttributeList( );
         }
-        private void Window_SizeChanged( object sender, SizeChangedEventArgs e )
+        private void Window_SizeChanged( object sender , SizeChangedEventArgs e )
         {
             if ( Tree != null )
             {
@@ -138,46 +139,52 @@ namespace POESKillTree
                 addtransform = Tree.TRect.TopLeft;
             }
         }
-        private void border1_Click( object sender, RoutedEventArgs e )
+        private void border1_Click( object sender , RoutedEventArgs e )
         {
 
             Point p = ( ( MouseEventArgs )e.OriginalSource ).GetPosition( border1.Child );
-            Vector2D v = new Vector2D( p.X, p.Y );
+            Vector2D v = new Vector2D( p.X , p.Y );
             v = v * multransform + addtransform;
             SkillTree.SkillNode node = null;
 
-            var nodes = Tree.SkilledNodes.Where( n => ( ( Tree.Skillnodes[ n ].Position - v ).Length < 50 ) );
+            var nodes = Tree.Skillnodes.Where( n => ( ( n.Value.Position - v ).Length < 50 ) );
             if ( nodes != null && nodes.Count( ) != 0 )
-                node = Tree.Skillnodes[ nodes.First( ) ];
-
-            if ( node != null )
             {
-                Tree.ForceRefundNode( node.id );
+                node = nodes.First( ).Value;
 
-                UpdateAllAttributeList( );
-                //Tree.UpdateAvailNodes();
-            }
-            if ( prePath != null )
-            {
-                foreach (ushort i in prePath)
+                if ( Tree.SkilledNodes.Contains( node.id ) )
                 {
-                    Tree.SkilledNodes.Add( i );
+                    Tree.ForceRefundNode( node.id );
+                    UpdateAllAttributeList( );
+
+                    prePath = Tree.GetShortestPathTo( node.id );
+                    Tree.DrawPath( prePath );
                 }
-                UpdateAllAttributeList( );
-                Tree.UpdateAvailNodes( );
+                else if ( prePath != null )
+                {
+                    foreach ( ushort i in prePath )
+                    {
+                        Tree.SkilledNodes.Add( i );
+                    }
+                    UpdateAllAttributeList( );
+                    Tree.UpdateAvailNodes( );
+
+                    toRemove = Tree.ForceRefundNodePreview( node.id );
+                    if ( toRemove != null )
+                        Tree.DrawRefundPreview( toRemove );
+                }
             }
             tbSkillURL.Text = Tree.SaveToURL( );
-
         }
         private List<string> attiblist = new List<string>( );
         private ListCollectionView AttibuteCollection;
         Regex backreplace = new Regex( "#" );
-        private string InsertNumbersInAttributes( KeyValuePair<string, List<float>> attrib )
+        private string InsertNumbersInAttributes( KeyValuePair<string , List<float>> attrib )
         {
             string s = attrib.Key;
             foreach ( var f in attrib.Value )
             {
-                s = backreplace.Replace( s, f + "", 1 );
+                s = backreplace.Replace( s , f + "" , 1 );
             }
             return s;
         }
@@ -245,25 +252,27 @@ namespace POESKillTree
             UpdateAttributeList( );
         }
         string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
-        private void button2_Click( object sender, RoutedEventArgs e )
+        private void button2_Click( object sender , RoutedEventArgs e )
         {
             if ( tbSkillURL.Text.Contains( "poezone.ru" ) )
             {
-                SkillTreeImporter.LoadBuildFromPoezone( Tree, tbSkillURL.Text );
+                SkillTreeImporter.LoadBuildFromPoezone( Tree , tbSkillURL.Text );
                 tbSkillURL.Text = Tree.SaveToURL( );
             }
-            else Tree.LoadFromURL( tbSkillURL.Text );
+            else
+                Tree.LoadFromURL( tbSkillURL.Text );
 
             justLoaded = true;
             cbCharType.SelectedIndex = Tree.Chartype;
             UpdateAllAttributeList( );
         }
-        [ValueConversion( typeof( string ), typeof( string ) )]
+        [ValueConversion( typeof( string ) , typeof( string ) )]
         public class GroupStringConverter : IValueConverter
         {
             static GroupStringConverter( )
             {
-                if ( !File.Exists( "groups.txt" ) ) return;
+                if ( !File.Exists( "groups.txt" ) )
+                    return;
                 Groups.Clear( );
                 foreach ( string s in File.ReadAllLines( "groups.txt" ) )
                 {
@@ -312,7 +321,7 @@ namespace POESKillTree
                                                                        new []{"resist","Defense"},
 
                                                                  };
-            public object Convert( object value, Type targetType, object parameter, CultureInfo culture )
+            public object Convert( object value , Type targetType , object parameter , CultureInfo culture )
             {
                 string s = ( string )value;
                 foreach ( var gp in Groups )
@@ -325,7 +334,7 @@ namespace POESKillTree
                 return "Everything else";
             }
 
-            public object ConvertBack( object value, Type targetType, object parameter, CultureInfo culture )
+            public object ConvertBack( object value , Type targetType , object parameter , CultureInfo culture )
             {
                 throw new NotImplementedException( );
             }
@@ -334,38 +343,38 @@ namespace POESKillTree
         {
             static Regex numberfilter = new Regex( @"[0-9\\.]+" );
 
-            public int Compare( string x, string y )
+            public int Compare( string x , string y )
             {
-                return numberfilter.Replace( x, "" ).CompareTo( numberfilter.Replace( y, "" ) );
+                return numberfilter.Replace( x , "" ).CompareTo( numberfilter.Replace( y , "" ) );
             }
         }
-        private void Window_Closing( object sender, System.ComponentModel.CancelEventArgs e )
+        private void Window_Closing( object sender , System.ComponentModel.CancelEventArgs e )
         {
-            File.WriteAllText( "skilltreeAddress.txt", tbSkillURL.Text + "\n" + tbLevel.Text );
+            File.WriteAllText( "skilltreeAddress.txt" , tbSkillURL.Text + "\n" + tbLevel.Text );
 
-            if (lvSavedBuilds.Items.Count > 0)
+            if ( lvSavedBuilds.Items.Count > 0 )
             {
-                StringBuilder rawBuilds = new StringBuilder();
-                foreach (ListViewItem lvi in lvSavedBuilds.Items)
+                StringBuilder rawBuilds = new StringBuilder( );
+                foreach ( ListViewItem lvi in lvSavedBuilds.Items )
                 {
-                    PoEBuild build = (PoEBuild)lvi.Content;
-                    rawBuilds.Append(build.name + '|' + build.description + ';' + build.url + '\n');
+                    PoEBuild build = ( PoEBuild )lvi.Content;
+                    rawBuilds.Append( build.name + '|' + build.description + ';' + build.url + '\n' );
                 }
-                File.WriteAllText("savedBuilds", rawBuilds.ToString().Trim());
+                File.WriteAllText( "savedBuilds" , rawBuilds.ToString( ).Trim( ) );
             }
             else
             {
-                if (File.Exists("savedBuilds"))
+                if ( File.Exists( "savedBuilds" ) )
                 {
-                    File.Delete("savedBuilds");
+                    File.Delete( "savedBuilds" );
                 }
             }
         }
-        private void tbSkillURL_MouseDoubleClick( object sender, MouseButtonEventArgs e )
+        private void tbSkillURL_MouseDoubleClick( object sender , MouseButtonEventArgs e )
         {
             tbSkillURL.SelectAll( );
         }
-        private void button1_Click_1( object sender, RoutedEventArgs e )
+        private void button1_Click_1( object sender , RoutedEventArgs e )
         {
             if ( !File.Exists( "Data\\get-items" ) )
             {
@@ -373,11 +382,11 @@ namespace POESKillTree
                 return;
             }
 
-           // try
-           // {
-                ItemAttributes = new ItemAttributes( "Data\\get-items" );
-                lbItemAttr.ItemsSource = ItemAttributes.Attributes;
-                UpdateAllAttributeList( );
+            // try
+            // {
+            ItemAttributes = new ItemAttributes( "Data\\get-items" );
+            lbItemAttr.ItemsSource = ItemAttributes.Attributes;
+            UpdateAllAttributeList( );
             //}
             //catch ( Exception er )
             //{
@@ -389,46 +398,47 @@ namespace POESKillTree
 
 
         }
-        private void btnPopup_OnClick( object sender, RoutedEventArgs e )
+        private void btnPopup_OnClick( object sender , RoutedEventArgs e )
         {
             popup1.IsOpen = false;
         }
-        private void btnDownloadItemData_Click( object sender, RoutedEventArgs e )
+        private void btnDownloadItemData_Click( object sender , RoutedEventArgs e )
         {
             popup1.IsOpen = false;
             System.Diagnostics.Process.Start( "http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text );
         }
-        private void tbCharName_TextChanged( object sender, TextChangedEventArgs e )
+        private void tbCharName_TextChanged( object sender , TextChangedEventArgs e )
         {
             tbCharLink.Text = "http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text;
         }
-        private void tbSearch_TextChanged( object sender, TextChangedEventArgs e )
+        private void tbSearch_TextChanged( object sender , TextChangedEventArgs e )
         {
-            Tree.HighlightNodes( tbSearch.Text, checkBox1.IsChecked.Value );
+            Tree.HighlightNodes( tbSearch.Text , checkBox1.IsChecked.Value );
         }
-        private void textBox3_TextChanged( object sender, TextChangedEventArgs e )
+        private void textBox3_TextChanged( object sender , TextChangedEventArgs e )
         {
             int lvl = 0;
-            if ( int.TryParse( tbLevel.Text, out lvl ) )
+            if ( int.TryParse( tbLevel.Text , out lvl ) )
             {
                 Tree.Level = lvl;
                 UpdateAllAttributeList( );
             }
         }
-        private void button3_Click( object sender, RoutedEventArgs e )
+        private void button3_Click( object sender , RoutedEventArgs e )
         {
             Tree.SkillAllHighligtedNodes( );
             UpdateAllAttributeList( );
         }
-        private void button4_Click( object sender, RoutedEventArgs e )
+        private void button4_Click( object sender , RoutedEventArgs e )
         {
-            if ( Tree == null ) return;
+            if ( Tree == null )
+                return;
             Tree.Reset( );
 
             UpdateAllAttributeList( );
         }
         private RenderTargetBitmap ClipboardBmp;
-        private void btnScreenShot_Click( object sender, RoutedEventArgs e )
+        private void btnScreenShot_Click( object sender , RoutedEventArgs e )
         {
             int maxsize = 3000;
             Geometry geometry = Tree.picActiveLinks.Clip;
@@ -450,7 +460,7 @@ namespace POESKillTree
                 xmax = ymax * aspect;
             }
 
-            ClipboardBmp = new RenderTargetBitmap( ( int )xmax, ( int )ymax, 96, 96, PixelFormats.Pbgra32 );
+            ClipboardBmp = new RenderTargetBitmap( ( int )xmax , ( int )ymax , 96 , 96 , PixelFormats.Pbgra32 );
             VisualBrush db = new VisualBrush( Tree.SkillTreeVisual );
             db.ViewboxUnits = BrushMappingMode.Absolute;
             db.Viewbox = contentBounds;
@@ -458,7 +468,7 @@ namespace POESKillTree
 
             using ( DrawingContext dc = dw.RenderOpen( ) )
             {
-                dc.DrawRectangle( db, null, new Rect( 0, 0, xmax, ymax ) );
+                dc.DrawRectangle( db , null , new Rect( 0 , 0 , xmax , ymax ) );
             }
             ClipboardBmp.Render( dw );
             ClipboardBmp.Freeze( );
@@ -469,101 +479,107 @@ namespace POESKillTree
 
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void Window_Loaded( object sender , RoutedEventArgs e )
         {
-            AttibuteCollection = new ListCollectionView(attiblist);
+            AttibuteCollection = new ListCollectionView( attiblist );
 
             listBox1.ItemsSource = AttibuteCollection;
             // AttibuteCollection.CustomSort = 
-            PropertyGroupDescription pgd = new PropertyGroupDescription("");
-            pgd.Converter = new GroupStringConverter();
-            AttibuteCollection.GroupDescriptions.Add(pgd);
+            PropertyGroupDescription pgd = new PropertyGroupDescription( "" );
+            pgd.Converter = new GroupStringConverter( );
+            AttibuteCollection.GroupDescriptions.Add( pgd );
 
-            AllAttributeCollection = new ListCollectionView(allAttributesList);
-            AllAttributeCollection.GroupDescriptions.Add(pgd);
+            AllAttributeCollection = new ListCollectionView( allAttributesList );
+            AllAttributeCollection.GroupDescriptions.Add( pgd );
             lbAllAttr.ItemsSource = AllAttributeCollection;
 
-            Tree = SkillTree.CreateSkillTree();
-            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
+            Tree = SkillTree.CreateSkillTree( );
+            image1.Fill = new VisualBrush( Tree.SkillTreeVisual );
 
-            Tree.Chartype = Tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
-            Tree.UpdateAvailNodes();
-            UpdateAllAttributeList();
+            Tree.Chartype = Tree.CharName.IndexOf( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ).ToUpper( ) );
+            Tree.UpdateAvailNodes( );
+            UpdateAllAttributeList( );
 
             multransform = Tree.TRect.Size / border1.RenderSize.Height;
             addtransform = Tree.TRect.TopLeft;
 
             // loading last build
-            if (File.Exists("skilltreeAddress.txt"))
+            if ( File.Exists( "skilltreeAddress.txt" ) )
             {
-                string s = File.ReadAllText("skilltreeAddress.txt");
-                tbSkillURL.Text = s.Split('\n')[0];
-                tbLevel.Text = s.Split('\n')[1];
-                button2_Click(this, new RoutedEventArgs());
+                string s = File.ReadAllText( "skilltreeAddress.txt" );
+                tbSkillURL.Text = s.Split( '\n' )[ 0 ];
+                tbLevel.Text = s.Split( '\n' )[ 1 ];
+                button2_Click( this , new RoutedEventArgs( ) );
                 justLoaded = false;
             }
 
             // loading saved build
             try
             {
-                if (File.Exists("savedBuilds"))
+                if ( File.Exists( "savedBuilds" ) )
                 {
-                    string[] builds = File.ReadAllText("savedBuilds").Split('\n');
-                    foreach (string b in builds)
+                    string[] builds = File.ReadAllText( "savedBuilds" ).Split( '\n' );
+                    foreach ( string b in builds )
                     {
-                        savedBuilds.Add(new PoEBuild(b.Split(';')[0].Split('|')[0], b.Split(';')[0].Split('|')[1], b.Split(';')[1]));
+                        savedBuilds.Add( new PoEBuild( b.Split( ';' )[ 0 ].Split( '|' )[ 0 ] , b.Split( ';' )[ 0 ].Split( '|' )[ 1 ] , b.Split( ';' )[ 1 ] ) );
                     }
 
-                    lvSavedBuilds.Items.Clear();
-                    foreach (PoEBuild build in savedBuilds)
+                    lvSavedBuilds.Items.Clear( );
+                    foreach ( PoEBuild build in savedBuilds )
                     {
-                        ListViewItem lvi = new ListViewItem { Content = build };
+                        ListViewItem lvi = new ListViewItem
+                        {
+                            Content = build
+                        };
                         lvi.MouseDoubleClick += lvi_MouseDoubleClick;
-                        lvSavedBuilds.Items.Add(lvi);
+                        lvSavedBuilds.Items.Add( lvi );
                     }
                 }
             }
-            catch (Exception ex)
+            catch ( Exception ex )
             {
-                MessageBox.Show("Unable to load the saved builds.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show( "Unable to load the saved builds." , "Error" , MessageBoxButton.OK , MessageBoxImage.Error );
             }
         }
 
-        void lvi_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        void lvi_MouseDoubleClick( object sender , MouseButtonEventArgs e )
         {
-            ListViewItem lvi = (ListViewItem)sender;
-            tbSkillURL.Text = ((PoEBuild)lvi.Content).url;
-            button2_Click(this, null); // loading the build
+            ListViewItem lvi = ( ListViewItem )sender;
+            tbSkillURL.Text = ( ( PoEBuild )lvi.Content ).url;
+            button2_Click( this , null ); // loading the build
         }
 
-        private void btnSaveNewBuild_Click(object sender, RoutedEventArgs e)
+        private void btnSaveNewBuild_Click( object sender , RoutedEventArgs e )
         {
-            FormBuildName formBuildName = new FormBuildName();
-            if ((bool)formBuildName.ShowDialog())
+            FormBuildName formBuildName = new FormBuildName( );
+            if ( ( bool )formBuildName.ShowDialog( ) )
             {
-                ListViewItem lvi = new ListViewItem { Content = new PoEBuild(formBuildName.getBuildName(), cbCharType.Text + ", " + tbUsedPoints.Text + " points used", tbSkillURL.Text) };
+                ListViewItem lvi = new ListViewItem
+                {
+                    Content = new PoEBuild( formBuildName.getBuildName( ) , cbCharType.Text + ", " + tbUsedPoints.Text + " points used" , tbSkillURL.Text )
+                };
                 lvi.MouseDoubleClick += lvi_MouseDoubleClick;
-                lvSavedBuilds.Items.Add(lvi);
+                lvSavedBuilds.Items.Add( lvi );
             }
         }
 
-        private void btnDelete_Click(object sender, RoutedEventArgs e)
+        private void btnDelete_Click( object sender , RoutedEventArgs e )
         {
-            if (lvSavedBuilds.SelectedItems.Count > 0)
+            if ( lvSavedBuilds.SelectedItems.Count > 0 )
             {
-                lvSavedBuilds.Items.Remove(lvSavedBuilds.SelectedItem);
+                lvSavedBuilds.Items.Remove( lvSavedBuilds.SelectedItem );
             }
         }
 
-        private void btnOverwriteBuild_Click(object sender, RoutedEventArgs e)
+        private void btnOverwriteBuild_Click( object sender , RoutedEventArgs e )
         {
-            if (lvSavedBuilds.SelectedItems.Count > 0)
+            if ( lvSavedBuilds.SelectedItems.Count > 0 )
             {
-                ((ListViewItem)lvSavedBuilds.SelectedItem).Content = new PoEBuild(((ListViewItem)lvSavedBuilds.SelectedItem).Content.ToString().Split('\n')[0], cbCharType.Text + ", " + tbUsedPoints.Text + " points used", tbSkillURL.Text);
+                ( ( ListViewItem )lvSavedBuilds.SelectedItem ).Content = new PoEBuild( ( ( ListViewItem )lvSavedBuilds.SelectedItem ).Content.ToString( ).Split( '\n' )[ 0 ] , cbCharType.Text + ", " + tbUsedPoints.Text + " points used" , tbSkillURL.Text );
             }
             else
             {
-                MessageBox.Show("Please select an existing build first.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show( "Please select an existing build first." , "Error" , MessageBoxButton.OK , MessageBoxImage.Error );
             }
         }
 
@@ -572,13 +588,14 @@ namespace POESKillTree
     class PoEBuild
     {
         public string name, description, url;
-        public PoEBuild(string n, string d, string u)
+        public PoEBuild( string n , string d , string u )
         {
             this.name = n;
             this.description = d;
             this.url = u;
         }
-        public override string ToString() {
+        public override string ToString( )
+        {
             return name + '\n' + description;
         }
     }
