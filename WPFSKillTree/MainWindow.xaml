@@ -82,7 +82,7 @@
         <Label Content="Used" Height="28" HorizontalAlignment="Left" Margin="177.667,10,0,0" x:Name="lblUsedPoints" VerticalAlignment="Top" />
         <Button Content="Download / Import Items" Height="23" HorizontalAlignment="Left" Margin="115,0,0,29" x:Name="btnLoadItems" VerticalAlignment="Bottom" Width="158" Click="button1_Click_1" />
         <TabControl Margin="6,51,0,85" x:Name="tabControl1" HorizontalAlignment="Left" Width="407">
-            <TabItem Header="Passive Attibutes" x:Name="tabItem1">
+            <TabItem Header="Passive Attributes" x:Name="tabItem1">
                 <Grid>
                     <ListBox Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" HorizontalAlignment="Center" Margin="0" x:Name="listBox1" VerticalAlignment="Top" Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" ItemsSource="{Binding}">
                         <ListBox.GroupStyle>
