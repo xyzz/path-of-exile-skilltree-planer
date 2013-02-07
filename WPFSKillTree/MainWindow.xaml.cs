@@ -15,6 +15,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Microsoft.Win32;
 using POESKillTree;
 using WPFSKillTree;
 
@@ -61,6 +63,28 @@ namespace POESKillTree
             InitializeComponent( );
 
         }
+        static Action emptyDelegate = delegate
+        {
+        };
+
+        private LoadingWindow loadingWindow;
+        private void startLoadingWindow()
+        {
+            loadingWindow = new LoadingWindow();
+             loadingWindow.Show();
+        }
+        private void updatetLoadingWindow(double c, double max )
+        {
+            loadingWindow.progressBar1.Maximum = max;
+            loadingWindow.progressBar1.Value = c;
+            loadingWindow.Dispatcher.Invoke( DispatcherPriority.Render , emptyDelegate );
+        }
+        private void closeLoadingWindow( )
+        {
+
+            loadingWindow.Close( );
+        }
+
         private void border1_MouseMove( object sender , MouseEventArgs e )
         {
             Point p = e.GetPosition( border1.Child );
@@ -124,26 +148,23 @@ namespace POESKillTree
 
             if ( Tree == null )
                 return;
-            SkillTree.SkillNode startnode = Tree.Skillnodes.First( nd => nd.Value.name == ( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ) ).ToUpper( ) ).Value;
+            SkillTree.SkillNode startnode = Tree.Skillnodes.First( nd => nd.Value.name == ( Tree.CharName[ cbCharType.SelectedIndex ] ).ToUpper( ) ).Value;
             Tree.SkilledNodes.Clear( );
             Tree.SkilledNodes.Add( startnode.id );
-            Tree.Chartype = Tree.CharName.IndexOf( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ).ToUpper( ) );
+            Tree.Chartype = Tree.CharName.IndexOf( ( Tree.CharName[ cbCharType.SelectedIndex ] ).ToUpper( ) );
             Tree.UpdateAvailNodes( );
             UpdateAllAttributeList( );
         }
         private void Window_SizeChanged( object sender , SizeChangedEventArgs e )
         {
-            if ( Tree != null )
-            {
-                multransform = Tree.TRect.Size / border1.RenderSize.Height;
-                addtransform = Tree.TRect.TopLeft;
-            }
+
         }
         private void border1_Click( object sender , RoutedEventArgs e )
         {
 
             Point p = ( ( MouseEventArgs )e.OriginalSource ).GetPosition( border1.Child );
             Vector2D v = new Vector2D( p.X , p.Y );
+
             v = v * multransform + addtransform;
             SkillTree.SkillNode node = null;
 
@@ -254,17 +275,24 @@ namespace POESKillTree
         string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
         private void button2_Click( object sender , RoutedEventArgs e )
         {
-            if ( tbSkillURL.Text.Contains( "poezone.ru" ) )
+            try
             {
-                SkillTreeImporter.LoadBuildFromPoezone( Tree , tbSkillURL.Text );
-                tbSkillURL.Text = Tree.SaveToURL( );
-            }
-            else
-                Tree.LoadFromURL( tbSkillURL.Text );
+                if (tbSkillURL.Text.Contains("poezone.ru"))
+                {
+                    SkillTreeImporter.LoadBuildFromPoezone(Tree, tbSkillURL.Text);
+                    tbSkillURL.Text = Tree.SaveToURL();
+                }
+                else
+                    Tree.LoadFromURL(tbSkillURL.Text);
 
-            justLoaded = true;
-            cbCharType.SelectedIndex = Tree.Chartype;
-            UpdateAllAttributeList( );
+                justLoaded = true;
+                cbCharType.SelectedIndex = Tree.Chartype;
+                UpdateAllAttributeList();
+            }
+            catch ( Exception )
+            {
+                MessageBox.Show("The Build you tried to load, is invalid");
+            }
         }
         [ValueConversion( typeof( string ) , typeof( string ) )]
         public class GroupStringConverter : IValueConverter
@@ -376,24 +404,26 @@ namespace POESKillTree
         }
         private void button1_Click_1( object sender , RoutedEventArgs e )
         {
-            if ( !File.Exists( "Data\\get-items" ) )
+            string filetoload = "";
+            if (File.Exists( "Data\\get-items" ))
+            {
+                filetoload = "Data\\get-items";
+            }
+            else if (File.Exists( "Data\\get-items.txt" ))
+            {
+                filetoload = "Data\\get-items.txt";
+            }
+            else
             {
                 popup1.IsOpen = true;
                 return;
             }
 
-            // try
-            // {
-            ItemAttributes = new ItemAttributes( "Data\\get-items" );
+         
+            ItemAttributes = new ItemAttributes( filetoload );
             lbItemAttr.ItemsSource = ItemAttributes.Attributes;
             UpdateAllAttributeList( );
-            //}
-            //catch ( Exception er )
-            //{
-            //    MessageBoxResult result = MessageBox.Show( "Your ItemData is invalid.\nYou  either tried to download the data for a character not on your account or you were not logged in while downloading it" );
-            //    popup1.IsOpen = true;
-            //}
-            // lbItemAttr.Items.Clear();
+     
 
 
 
@@ -493,14 +523,15 @@ namespace POESKillTree
             AllAttributeCollection.GroupDescriptions.Add( pgd );
             lbAllAttr.ItemsSource = AllAttributeCollection;
 
-            Tree = SkillTree.CreateSkillTree( );
+            Tree = SkillTree.CreateSkillTree(startLoadingWindow,updatetLoadingWindow,closeLoadingWindow );
             image1.Fill = new VisualBrush( Tree.SkillTreeVisual );
+
 
             Tree.Chartype = Tree.CharName.IndexOf( ( ( string )( ( ComboBoxItem )cbCharType.SelectedItem ).Content ).ToUpper( ) );
             Tree.UpdateAvailNodes( );
             UpdateAllAttributeList( );
 
-            multransform = Tree.TRect.Size / border1.RenderSize.Height;
+            multransform = Tree.TRect.Size / image1.RenderSize.Height;
             addtransform = Tree.TRect.TopLeft;
 
             // loading last build
@@ -583,6 +614,32 @@ namespace POESKillTree
             }
         }
 
+        private void btnDownloadItemData_Copy_Click( object sender , RoutedEventArgs e )
+        {
+            popup1.IsOpen = false;
+            var fileDialog = new OpenFileDialog();
+            fileDialog.Multiselect = false;
+           bool? ftoload= fileDialog.ShowDialog(this);
+            if (ftoload.Value)
+            {
+            ItemAttributes = new ItemAttributes( fileDialog.FileName );
+            lbItemAttr.ItemsSource = ItemAttributes.Attributes;
+            UpdateAllAttributeList( );
+            }
+
+
+        }
+
+        private void btnCopyStats_Click( object sender , RoutedEventArgs e )
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var at in attiblist)
+            {
+                sb.AppendLine(at);
+            }
+            Clipboard.SetText(sb.ToString(),TextDataFormat.Text);
+           
+        }
     }
 
     class PoEBuild

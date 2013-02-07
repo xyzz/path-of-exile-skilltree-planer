@@ -22,12 +22,12 @@ namespace POESKillTree
             }
         }
 
-        private TranslateTransform GetTranslateTransform(UIElement element)
+        public TranslateTransform GetTranslateTransform(UIElement element)
         {
             return (TranslateTransform)((TransformGroup)element.RenderTransform).Children.First(tr => tr is TranslateTransform);
         }
 
-        private ScaleTransform GetScaleTransform(UIElement element)
+        public ScaleTransform GetScaleTransform( UIElement element )
         {
             return (ScaleTransform)((TransformGroup)element.RenderTransform).Children.First(tr => tr is ScaleTransform);
         }

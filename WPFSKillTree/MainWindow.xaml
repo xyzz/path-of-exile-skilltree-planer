@@ -1,7 +1,8 @@
-﻿<Window x:Class="POESKillTree.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:WPFSKillTree="clr-namespace:WPFSKillTree"
-        xmlns:POESKillTree="clr-namespace:POESKillTree" Title="Path of Exile - Passive Skill Tree Planner" Height="639" Width="1426" SizeChanged="Window_SizeChanged" Closing="Window_Closing" Icon="/POESKillTree;component/naja.ico" Loaded="Window_Loaded">
+        xmlns:POESKillTree="clr-namespace:POESKillTree" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="POESKillTree.MainWindow"
+        Title="Path of Exile - Passive Skill Tree Planner" Height="667" Width="1200" SizeChanged="Window_SizeChanged" Closing="Window_Closing" Icon="/POESKillTree;component/naja.ico" Loaded="Window_Loaded">
     <Window.Resources>
         <Style x:Key="ContainerStyle" TargetType="{x:Type GroupItem}">
             <Setter Property="Template">
@@ -17,31 +18,55 @@
 
     </Window.Resources>
     <Grid Margin="0,0,0,1">
-        <Popup Name="popup1" Height="Auto" Placement="Center" PlacementTarget="{Binding ElementName=txtSynToListBox}" Margin="279,150,324,150">
+        <Popup x:Name="popup1" Height="Auto" Placement="Center" PlacementTarget="{Binding ElementName=txtSynToListBox}" Margin="279,150,324,150">
             <Border >
                 <StackPanel Background="Beige">
                     <TextBlock Text="No Item Data Found" FontWeight="Bold" HorizontalAlignment="Center"/>
                     <TextBlock Text="Please enter Your Character Name Below and click on Download. " HorizontalAlignment="Center"/>
                     <TextBlock Text="This Will open your default Web-browser and download the Item data.  " HorizontalAlignment="Center"/>
                     <TextBlock Text="Save it to the data folder beside this executable  " HorizontalAlignment="Center"/>
-                    <TextBlock Text="it's name should be 'get-items' " HorizontalAlignment="Center"/>
+                    <TextBlock HorizontalAlignment="Center"><Run Text="it's name should be 'get-items"/><Run Language="de-de" Text="' or 'get-items.txt."/><LineBreak/><Run Language="de-de" Text="You can also load a specific file using the 'Load specific file' Button."/></TextBlock>
                     <TextBlock Text="click on the Load Items Button Again to Load the items after the download' " HorizontalAlignment="Center"/>
                     <TextBlock Text="" HorizontalAlignment="Center"/>
                     <TextBlock Text="if you don't like the button or the tool just crashes the next time you click on Load Items " HorizontalAlignment="Center"/>
                     <TextBlock Text="copy this link to your browser after typing your name " HorizontalAlignment="Center"/>
-                    <TextBox Name="tbCharLink" />
-                    <TextBox Text="YourCharacterName" Name="tbCharName" TextChanged="tbCharName_TextChanged"  HorizontalAlignment="Center"/>
+                    <TextBox x:Name="tbCharLink" />
+                    <TextBox Text="YourCharacterName" x:Name="tbCharName" TextChanged="tbCharName_TextChanged"  HorizontalAlignment="Center"/>
                     <TextBlock Text=""/>
-                    <Button Content="Download" x:Name="btnDownloadItemData" Width="auto" Height="auto" Click="btnDownloadItemData_Click"></Button>
+                    <Button Content="Download" x:Name="btnDownloadItemData" Width="auto" Height="auto" Click="btnDownloadItemData_Click"/>
                     <Button Content="Ok" x:Name="btnPopup" Click="btnPopup_OnClick" Width="auto" Height="auto" />
+                    <Button Content="Load specific file" x:Name="btnDownloadItemData_Copy" Width="auto" Height="auto" Click="btnDownloadItemData_Copy_Click" />
 
                 </StackPanel>
             </Border>
         </Popup>
-        <POESKillTree:ZoomBorder BorderBrush="Silver" BorderThickness="1" Height="auto" x:Name="border1" ClipToBounds="True" MouseMove="border1_MouseMove" Margin="419,0,247,29" Click="border1_Click" Background="Black" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
-            <Rectangle Height="auto" Name="image1" Stretch="Uniform" Width="auto" ClipToBounds="True" Margin="0,0,0,-1" />
+        <POESKillTree:ZoomBorder BorderBrush="Silver" BorderThickness="1" Height="auto" x:Name="border1" ClipToBounds="True" MouseMove="border1_MouseMove" Margin="419,0,4,29" Click="border1_Click" Background="Black" HorizontalAlignment="Stretch" FlowDirection="LeftToRight">
+            <Rectangle Height="559" x:Name="image1" Stretch="Uniform" Width="749" ClipToBounds="false" Margin="9" HorizontalAlignment="Center" VerticalAlignment="Center" />
         </POESKillTree:ZoomBorder>
-        <ComboBox Height="23" HorizontalAlignment="Left" Margin="54,12,0,0" Name="cbCharType" VerticalAlignment="Top" Width="149" SelectionChanged="comboBox1_SelectionChanged">
+        <Label x:Name="lblSkillURL" Content="Build link:" HorizontalAlignment="Left" Margin="419,0,0,1" VerticalAlignment="Bottom"/>
+
+        <TextBox Height="23" Margin="480,0,84,2" x:Name="tbSkillURL" VerticalAlignment="Bottom" Text="http://www.pathofexile.com/passive-skill-tree/AAAAAgMA"  VerticalContentAlignment="Center" MouseDoubleClick="tbSkillURL_MouseDoubleClick" />
+        <Expander Header="Builds" HorizontalAlignment="Left" Margin="385,10,0,6" ExpandDirection="Right" IsHitTestVisible="True">
+            <Grid x:Name="gridBuildManager" Background="#FFE5E5E5" HorizontalAlignment="Left">
+                <ListView x:Name="lvSavedBuilds" Margin="4,26,4,29" HorizontalAlignment="Left" Width="232" ForceCursor="True">
+                    <ListView.View>
+                        <GridView>
+                            <GridView.ColumnHeaderContainerStyle>
+                                <Style>
+                                    <Setter Property="UIElement.Visibility" Value="Collapsed"/>
+                                </Style>
+                            </GridView.ColumnHeaderContainerStyle>
+                            <GridViewColumn/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <Label x:Name="lblSaved" Content="Saved builds:" HorizontalAlignment="Left" Margin="0" VerticalAlignment="Top"/>
+                <Button x:Name="btnSaveNewBuild" Content="Save new" HorizontalAlignment="Left" Margin="4,0,163,3" VerticalAlignment="Bottom" Width="80" Click="btnSaveNewBuild_Click"/>
+                <Button x:Name="btnOverwriteBuild" Content="Overwrite" Margin="152,0,0,3.04" VerticalAlignment="Bottom" Click="btnOverwriteBuild_Click" HorizontalAlignment="Left" Width="84"/>
+                <Button x:Name="btnDelete" Content="Delete" Margin="88,0,91.273,3" VerticalAlignment="Bottom" Click="btnDelete_Click" HorizontalAlignment="Left" Width="60"/>
+            </Grid>
+        </Expander>
+        <ComboBox Height="23" HorizontalAlignment="Left" Margin="54,12,0,0" x:Name="cbCharType" VerticalAlignment="Top" Width="75.667" SelectionChanged="comboBox1_SelectionChanged">
             <ComboBoxItem Content="Marauder" />
             <ComboBoxItem Content="Ranger" />
             <ComboBoxItem Content="Witch" IsSelected="True" />
@@ -50,17 +75,16 @@
             <ComboBoxItem Content="Shadow" />
         </ComboBox>
         <Label Content="Class:" Height="28" HorizontalAlignment="Left" Margin="10,10,0,0" x:Name="lblClass" VerticalAlignment="Top" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="0,439,0,0" Name="textBox1" VerticalAlignment="Top" Width="120" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="0,468,0,0" Name="textBox2" VerticalAlignment="Top" Width="120" />
-        <TextBox Height="23" Margin="480,0,327,2" Name="tbSkillURL" VerticalAlignment="Bottom" Text="http://www.pathofexile.com/passive-skill-tree/AAAAAQQBCjGfdH3Fr_WJKhzbnVC6-w=="  VerticalContentAlignment="Center" MouseDoubleClick="tbSkillURL_MouseDoubleClick" />
-        <Button Content="Load build" Height="23" HorizontalAlignment="Right" x:Name="btnLoadBuild" VerticalAlignment="Bottom" Width="75" Click="button2_Click" Margin="0,0,247,2" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="292,12,0,0" Name="tbUsedPoints" VerticalAlignment="Top" Width="34" IsReadOnly="True" />
-        <Label Content="Used" Height="28" HorizontalAlignment="Left" Margin="255,10,0,0" x:Name="lblUsedPoints" VerticalAlignment="Top" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="0,439,0,0" x:Name="textBox1" VerticalAlignment="Top" Width="120" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="0,468,0,0" x:Name="textBox2" VerticalAlignment="Top" Width="120" />
+        <Button Content="Load build" Height="23" HorizontalAlignment="Right" x:Name="btnLoadBuild" VerticalAlignment="Bottom" Width="75" Click="button2_Click" Margin="0,0,4,2" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="218.347,12,0,0" x:Name="tbUsedPoints" VerticalAlignment="Top" Width="34" IsReadOnly="True" />
+        <Label Content="Used" Height="28" HorizontalAlignment="Left" Margin="177.667,10,0,0" x:Name="lblUsedPoints" VerticalAlignment="Top" />
         <Button Content="Download / Import Items" Height="23" HorizontalAlignment="Left" Margin="115,0,0,29" x:Name="btnLoadItems" VerticalAlignment="Bottom" Width="158" Click="button1_Click_1" />
-        <TabControl Margin="6,51,0,60" Name="tabControl1" HorizontalAlignment="Left" Width="407">
-            <TabItem Header="Passive Attibutes" Name="tabItem1">
+        <TabControl Margin="6,51,0,85" x:Name="tabControl1" HorizontalAlignment="Left" Width="407">
+            <TabItem Header="Passive Attibutes" x:Name="tabItem1">
                 <Grid>
-                    <ListBox Height="{Binding Path=ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}}" HorizontalAlignment="Center" Margin="0" Name="listBox1" VerticalAlignment="Top" Width="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}, Path=ActualWidth}" ItemsSource="{Binding}">
+                    <ListBox Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" HorizontalAlignment="Center" Margin="0" x:Name="listBox1" VerticalAlignment="Top" Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" ItemsSource="{Binding}">
                         <ListBox.GroupStyle>
                             <GroupStyle ContainerStyle="{StaticResource ContainerStyle}" />
                         </ListBox.GroupStyle>
@@ -69,13 +93,11 @@
             </TabItem>
             <TabItem Header="Item Attributes" Margin="0">
                 <Grid>
-                    <ListBox Height="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}, Path=ActualHeight}" Name="lbItemAttr" Width="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}, Path=ActualWidth}">
+                    <ListBox Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" x:Name="lbItemAttr" Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
-                                    <TextBlock>
-                                     <Run Text="{Binding ValuedAttribute,Mode=OneWay}" /><Run Text=" " />
-                                    </TextBlock>
+                                    <TextBlock><Run Text="{Binding ValuedAttribute, Mode=OneWay}" /><Run Text=" " /></TextBlock>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -87,7 +109,7 @@
             </TabItem>
             <TabItem Header="Total Attributes">
                 <Grid>
-                    <ListBox Height="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}, Path=ActualHeight}" Name="lbAllAttr" Width="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=Grid, AncestorLevel=1}, Path=ActualWidth}">
+                    <ListBox Height="{Binding ActualHeight, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}" x:Name="lbAllAttr" Width="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorLevel=1, AncestorType={x:Type Grid}}}">
                         <ListBox.GroupStyle>
                             <GroupStyle ContainerStyle="{StaticResource ContainerStyle}" />
                         </ListBox.GroupStyle>
@@ -95,34 +117,15 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Label Content="Search:" Height="28" HorizontalAlignment="Left" Margin="6,0,0,-1" Name="label3" VerticalAlignment="Bottom" VerticalContentAlignment="Center" Width="50" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="60,0,0,1" Name="tbSearch" VerticalAlignment="Bottom" Width="284" TextChanged="tbSearch_TextChanged" />
-        <Label Content="Level:" Height="28" HorizontalAlignment="Left" Margin="323,10,0,0" x:Name="lblLevel" VerticalAlignment="Top" VerticalContentAlignment="Center" />
-        <TextBox Height="23" HorizontalAlignment="Left" Margin="367,12,0,0" Name="tbLevel" VerticalAlignment="Top" Width="41" TextChanged="textBox3_TextChanged" />
+        <Label Content="Search:" Height="28" HorizontalAlignment="Left" Margin="6,0,0,-1" x:Name="label3" VerticalAlignment="Bottom" VerticalContentAlignment="Center" Width="50" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="60,0,0,1" x:Name="tbSearch" VerticalAlignment="Bottom" Width="284" TextChanged="tbSearch_TextChanged" />
+        <Label Content="Level:" Height="28" HorizontalAlignment="Left" Margin="256.347,10,0,0" x:Name="lblLevel" VerticalAlignment="Top" VerticalContentAlignment="Center" />
+        <TextBox Height="23" HorizontalAlignment="Left" Margin="295.804,12,0,0" x:Name="tbLevel" VerticalAlignment="Top" Width="41" TextChanged="textBox3_TextChanged" />
         <Button Content="Skill highlighted nodes" Height="23" HorizontalAlignment="Left" Margin="278,0,0,29" x:Name="btnSkillHighlighted" VerticalAlignment="Bottom" Width="135" Click="button3_Click" RenderTransformOrigin="0.44,2.652" />
-        <CheckBox Content="RegEx" Height="16" HorizontalAlignment="Left" Margin="359,0,0,5" Name="checkBox1" VerticalAlignment="Bottom" />
-        <Button Content="Reset" Height="23" HorizontalAlignment="Left" Margin="209,12,0,0" Name="button4" VerticalAlignment="Top" Width="40" Click="button4_Click" />
-        <Button Content="Screenshot" Height="23" HorizontalAlignment="Left" Margin="6,0,0,29" Name="btnScreenShot" VerticalAlignment="Bottom" Width="104" Click="btnScreenShot_Click" />
-        <Label x:Name="lblSkillURL" Content="Build link:" HorizontalAlignment="Left" Margin="419,0,0,1" VerticalAlignment="Bottom"/>
-        <ListView x:Name="lvSavedBuilds" Margin="0,26,10,29" HorizontalAlignment="Right" Width="232" ForceCursor="True">
-            <ListView.View>
-                <GridView>
-                    <GridView.ColumnHeaderContainerStyle>
-
-                        <Style>
-
-                            <Setter Property="FrameworkElement.Visibility" Value="Collapsed"/>
-
-                        </Style>
-
-                    </GridView.ColumnHeaderContainerStyle>
-                    <GridViewColumn/>
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <Label x:Name="lblSaved" Content="Saved builds:" HorizontalAlignment="Right" Margin="0,0,163,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnSaveNewBuild" Content="Save new" HorizontalAlignment="Right" Margin="0,0,163,3" VerticalAlignment="Bottom" Width="79" Click="btnSaveNewBuild_Click"/>
-        <Button x:Name="btnOverwriteBuild" Content="Overwrite" HorizontalAlignment="Right" Margin="0,0,79,3" VerticalAlignment="Bottom" Width="79" Click="btnOverwriteBuild_Click"/>
-        <Button x:Name="btnDelete" Content="Delete" HorizontalAlignment="Right" Margin="0,0,10,3" VerticalAlignment="Bottom" Width="64" Click="btnDelete_Click"/>
-    </Grid>
+        <CheckBox Content="RegEx" Height="16" HorizontalAlignment="Left" Margin="359,0,0,5" x:Name="checkBox1" VerticalAlignment="Bottom" />
+        <Button Content="Reset" Height="23" HorizontalAlignment="Left" Margin="133.667,12,0,0" x:Name="button4" VerticalAlignment="Top" Width="40" Click="button4_Click" />
+        <Button Content="Screenshot" Height="23" HorizontalAlignment="Left" Margin="6,0,0,29" x:Name="btnScreenShot" VerticalAlignment="Bottom" Width="104" Click="btnScreenShot_Click" />
+        
+        <Button Content="Copy Passive Attributes to Clipboard" Height="23" HorizontalAlignment="Left" Margin="6,0,0,56" x:Name="btnCopyStats" VerticalAlignment="Bottom" Width="208.347" Click="btnCopyStats_Click" />
+        </Grid>
 </Window>

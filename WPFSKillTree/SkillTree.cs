@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -16,22 +17,27 @@ namespace POESKillTree
 {
     public partial class SkillTree
     {
+        public delegate void startLoadingWindow( );
+        public delegate void closeLoadingWindow( );
+        public delegate void UpdateLoadingWindow( double current , double max );
+
+
         string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
-        public List<NodeGroup> NodeGroups = new List<NodeGroup>();
-        public Dictionary<UInt16, SkillNode> Skillnodes = new Dictionary<UInt16, SkillNode>();
-        public List<string> AttributeTypes = new List<string>();
+        public List<NodeGroup> NodeGroups = new List<NodeGroup>( );
+        public Dictionary<UInt16, SkillNode> Skillnodes = new Dictionary<UInt16 , SkillNode>( );
+        public List<string> AttributeTypes = new List<string>( );
         // public Bitmap iconActiveSkills;
-        public SkillIcons iconInActiveSkills = new SkillIcons();
-        public SkillIcons iconActiveSkills = new SkillIcons();
-        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string, string>() { { "normal", "PSSkillFrame" }, { "notable", "NotableFrameUnallocated" }, { "keystone", "KeystoneFrameUnallocated" } };
-        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string, string>() { { "normal", "PSSkillFrameActive" }, { "notable", "NotableFrameAllocated" }, { "keystone", "KeystoneFrameAllocated" } };
-        public List<string> FaceNames = new List<string>() { "centermarauder", "centerranger", "centerwitch", "centerduelist", "centertemplar", "centershadow" };
-        public List<string> CharName = new List<string>() { "MARAUDER", "RANGER", "WITCH", "DUELIST", "TEMPLAR", "SIX" };
-        public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string, float>[6];
-        public Dictionary<string, float> BaseAttributes = new Dictionary<string, float>()
+        public SkillIcons iconInActiveSkills = new SkillIcons( );
+        public SkillIcons iconActiveSkills = new SkillIcons( );
+        public Dictionary<string, string> nodeBackgrounds = new Dictionary<string , string>( ) { { "normal" , "PSSkillFrame" } , { "notable" , "NotableFrameUnallocated" } , { "keystone" , "KeystoneFrameUnallocated" } };
+        public Dictionary<string, string> nodeBackgroundsActive = new Dictionary<string , string>( ) { { "normal" , "PSSkillFrameActive" } , { "notable" , "NotableFrameAllocated" } , { "keystone" , "KeystoneFrameAllocated" } };
+        public List<string> FaceNames = new List<string>( ) { "centermarauder" , "centerranger" , "centerwitch" , "centerduelist" , "centertemplar" , "centershadow" };
+        public List<string> CharName = new List<string>( ) { "MARAUDER" , "RANGER" , "WITCH" , "DUELIST" , "TEMPLAR" , "SIX" };
+        public Dictionary<string, float>[] CharBaseAttributes = new Dictionary<string , float>[ 6 ];
+        public Dictionary<string, float> BaseAttributes = new Dictionary<string , float>( )
                                                               {
                                                                   {"+# to maximum Mana",36},
-                                                                  {"+# to maximum Life",45},
+                                                                  {"+# to maximum Life",44},
                                                                   {"Evasion Rating: #",50},
                                                                   {"+# Maximum Endurance Charge",3},
                                                                   {"+# Maximum Frenzy Charge",3},
@@ -42,7 +48,7 @@ namespace POESKillTree
                                                                   {"#% Cast Speed Increase per Frenzy Charge",5},
                                                                   {"#% Critical Strike Chance Increase per Power Charge",50},
                                                               };
-        public static float LifePerLevel = 5;
+        public static float LifePerLevel = 6;
         public static float EvasPerLevel = 3;
         public static float ManaPerLevel = 4;
         public static float IntPerMana = 2;
@@ -51,610 +57,614 @@ namespace POESKillTree
         public static float StrPerED = 5; //%
         public static float DexPerAcc = 0.5f;
         public static float DexPerEvas = 5; //%
-        private List<SkillTree.SkillNode> highlightnodes; 
+        private List<SkillTree.SkillNode> highlightnodes;
         private int level = 1;
         private int chartype = 0;
-        public HashSet<ushort> SkilledNodes = new HashSet<ushort>();
-        public HashSet<ushort> AvailNodes = new HashSet<ushort>();
-        Dictionary<string, Asset> assets = new Dictionary<string, Asset>();
-        public Rect2D TRect = new Rect2D();
+        public HashSet<ushort> SkilledNodes = new HashSet<ushort>( );
+        public HashSet<ushort> AvailNodes = new HashSet<ushort>( );
+        Dictionary<string, Asset> assets = new Dictionary<string , Asset>( );
+        public Rect2D TRect = new Rect2D( );
         public float scaleFactor = 1;
-        public HashSet<int[]> Links = new HashSet<int[]>();
-        public void Reset()
+        public HashSet<int[]> Links = new HashSet<int[]>( );
+        public void Reset( )
         {
-            SkilledNodes.Clear();
-            var node = Skillnodes.First(nd => nd.Value.name == CharName[chartype]);
-            SkilledNodes.Add(node.Value.id);
-            UpdateAvailNodes();
+            SkilledNodes.Clear( );
+            var node = Skillnodes.First( nd => nd.Value.name == CharName[ chartype ] );
+            SkilledNodes.Add( node.Value.id );
+            UpdateAvailNodes( );
         }
-        static Action emptyDelegate = delegate { };
-        public static SkillTree CreateSkillTree()
+        static Action emptyDelegate = delegate
+        {
+        };
+        public static SkillTree CreateSkillTree( startLoadingWindow start = null , UpdateLoadingWindow update = null , closeLoadingWindow finish = null )
         {
 
             string skilltreeobj = "";
-            if (Directory.Exists("Data"))
+            if ( Directory.Exists( "Data" ) )
             {
-                if (File.Exists("Data\\Skilltree.txt"))
+                if ( File.Exists( "Data\\Skilltree.txt" ) )
                 {
-                    skilltreeobj = File.ReadAllText("Data\\Skilltree.txt");
+                    skilltreeobj = File.ReadAllText( "Data\\Skilltree.txt" );
                 }
             }
             else
             {
-                Directory.CreateDirectory("Data");
-                Directory.CreateDirectory("Data\\Assets");
+                Directory.CreateDirectory( "Data" );
+                Directory.CreateDirectory( "Data\\Assets" );
             }
 
-            if (skilltreeobj == "")
+            if ( skilltreeobj == "" )
             {
-                LoadingWindow loadingWindow = new LoadingWindow();
-                loadingWindow.Show();
+                bool displayProgress = (start != null && update != null && finish != null);
+                if ( displayProgress )
+                    start( );
                 //loadingWindow.Dispatcher.Invoke(DispatcherPriority.Background,new Action(delegate { }));
-                loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
+
 
                 string uriString = "http://www.pathofexile.com/passive-skill-tree/";
-                WebRequest req = WebRequest.Create(uriString);
-
-                WebResponse resp = req.GetResponse();
+                HttpWebRequest req = ( HttpWebRequest )WebRequest.Create( uriString );
+                HttpWebResponse resp = ( HttpWebResponse )req.GetResponse( );
                 string code = new StreamReader(resp.GetResponseStream()).ReadToEnd();
-                Regex regex = new Regex("var passiveSkillTreeData.*");
-                skilltreeobj = regex.Match(code).Value.Replace("root", "main").Replace("\\/", "/");
-                skilltreeobj = skilltreeobj.Substring(27, skilltreeobj.Length - 27 - 2) + "";
-                File.WriteAllText("Data\\Skilltree.txt", skilltreeobj);
-
-                loadingWindow.Close();
+                Regex regex = new Regex( "var passiveSkillTreeData.*" );
+                skilltreeobj = regex.Match( code ).Value.Replace( "root" , "main" ).Replace( "\\/" , "/" );
+                skilltreeobj = skilltreeobj.Substring( 27 , skilltreeobj.Length - 27 - 2 ) + "";
+                File.WriteAllText( "Data\\Skilltree.txt" , skilltreeobj );
+                if ( displayProgress )
+                    finish( );
             }
 
-            return new SkillTree(skilltreeobj);
+            return new SkillTree( skilltreeobj, start ,  update , finish );
         }
-        public SkillTree(String treestring)
+        public SkillTree( String treestring , startLoadingWindow start = null , UpdateLoadingWindow update = null , closeLoadingWindow finish = null )
         {
-
-            RavenJObject jObject = RavenJObject.Parse(treestring.Replace("Additional ", ""));
+            bool displayProgress = ( start != null && update != null && finish != null );
+            RavenJObject jObject = RavenJObject.Parse( treestring.Replace( "Additional " , "" ) );
 
             int qindex = 0;
 
 
 
-            foreach (var obj in (((RavenJObject)jObject["skillSprites"])))
+            foreach ( var obj in ( ( ( RavenJObject )jObject[ "skillSprites" ] ) ) )
             {
-                if (obj.Key.Contains("inactive"))continue;
-                RavenJObject jobj = (RavenJObject)((RavenJArray)(obj.Value))[3];
-                iconActiveSkills.Images[jobj["filename"].Value<string>()]= null;
-                foreach (string s in ((RavenJObject)jobj["coords"]).Keys)
+                if ( obj.Key.Contains( "inactive" ) )
+                    continue;
+                RavenJObject jobj = ( RavenJObject )( ( RavenJArray )( obj.Value ) )[ 3 ];
+                iconActiveSkills.Images[ jobj[ "filename" ].Value<string>( ) ] = null;
+                foreach ( string s in ( ( RavenJObject )jobj[ "coords" ] ).Keys )
                 {
-                     RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
-                     iconActiveSkills.SkillPositions[s] = new KeyValuePair<Rect, string>(new Rect(o["x"].Value<int>(), o["y"].Value<int>(), o["w"].Value<int>(), o["h"].Value<int>()), jobj["filename"].Value<string>());
+                    RavenJObject o = ( RavenJObject )( ( ( RavenJObject )jobj[ "coords" ] )[ s ] );
+                    iconActiveSkills.SkillPositions[ s ] = new KeyValuePair<Rect , string>( new Rect( o[ "x" ].Value<int>( ) , o[ "y" ].Value<int>( ) , o[ "w" ].Value<int>( ) , o[ "h" ].Value<int>( ) ) , jobj[ "filename" ].Value<string>( ) );
                 }
-                //iconActiveSkills.SkillPositions[qindex] = new Dictionary<string, KeyValuePair<Rect,string>>();
-               // iconActiveSkills.Images.Add(jobj[0].Value<string>(),null);
-               // iconActiveSkills.Images.Add(jobj["filename"].Value<string>(), null);
-                //foreach (string s in ((RavenJObject)(jobj["coords"])).Keys)
-                //{
-                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["coords"])[s]);
-                //    //iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                //                                                       //   o["w"].Value<int>(), o["h"].Value<int>());
-                //}
-                //foreach (string s in ((RavenJObject)(jobj["notableCoords"])).Keys)
-                //{
-                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["notableCoords"])[s]);
-                //    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                //                                                          o["w"].Value<int>(), o["h"].Value<int>());
-                //}
-                //foreach (string s in ((RavenJObject)(jobj["keystoneCoords"])).Keys)
-                //{
-                //    RavenJObject o = (RavenJObject)(((RavenJObject)jobj["keystoneCoords"])[s]);
-                //    iconActiveSkills.SkillPositions[qindex][s] = new Rect(o["x"].Value<int>(), o["y"].Value<int>(),
-                //                                                          o["w"].Value<int>(), o["h"].Value<int>());
-                //}
                 qindex++;
             }
             qindex = 0;
-            foreach (var obj in (((RavenJObject)jObject["skillSprites"])))
+            foreach ( var obj in ( ( ( RavenJObject )jObject[ "skillSprites" ] ) ) )
             {
-                if (obj.Key.Contains("active")) continue;
-                RavenJObject jobj = (RavenJObject) ((RavenJArray) (obj.Value))[3];
-                iconInActiveSkills.Images[jobj["filename"].Value<string>()] = null;
-                foreach (string s in ((RavenJObject) jobj["coords"]).Keys)
+                if ( obj.Key.Contains( "active" ) )
+                    continue;
+                RavenJObject jobj = ( RavenJObject )( ( RavenJArray )( obj.Value ) )[ 3 ];
+                iconInActiveSkills.Images[ jobj[ "filename" ].Value<string>( ) ] = null;
+                foreach ( string s in ( ( RavenJObject )jobj[ "coords" ] ).Keys )
                 {
-                    RavenJObject o = (RavenJObject) (((RavenJObject) jobj["coords"])[s]);
-                    iconInActiveSkills.SkillPositions[s] =
-                        new KeyValuePair<Rect, string>(new Rect(o["x"].Value<int>(), o["y"].Value<int>(), o["w"].Value<int>(), o["h"].Value<int>()), jobj["filename"].Value<string>());
+                    RavenJObject o = ( RavenJObject )( ( ( RavenJObject )jobj[ "coords" ] )[ s ] );
+                    iconInActiveSkills.SkillPositions[ s ] =
+                        new KeyValuePair<Rect , string>( new Rect( o[ "x" ].Value<int>( ) , o[ "y" ].Value<int>( ) , o[ "w" ].Value<int>( ) , o[ "h" ].Value<int>( ) ) , jobj[ "filename" ].Value<string>( ) );
                 }
             }
 
-            foreach (string s in ((RavenJObject)(jObject["assets"])).Keys)
+            foreach ( string s in ( ( RavenJObject )( jObject[ "assets" ] ) ).Keys )
             {
-                if (((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.3835"].Value<string>() == null)
+                if ( ( ( RavenJObject )( ( RavenJObject )( jObject[ "assets" ] ) )[ s ] )[ "0.3835" ].Value<string>( ) == null )
                     continue;
-                assets[s] = new Asset(s,
-                                      ((RavenJObject)((RavenJObject)(jObject["assets"]))[s])["0.3835"].Value
-                                          <string>());
+                assets[ s ] = new Asset( s ,
+                                      ( ( RavenJObject )( ( RavenJObject )( jObject[ "assets" ] ) )[ s ] )[ "0.3835" ].Value
+                                          <string>( ) );
             }
-            iconActiveSkills.OpenOrDownloadImages();
-            iconInActiveSkills.OpenOrDownloadImages();
-
-            foreach (string s in ((RavenJObject)jObject["characterData"]).Keys)
+            if ( displayProgress )
+                start( );
+            iconActiveSkills.OpenOrDownloadImages(update );
+            iconInActiveSkills.OpenOrDownloadImages(update );
+            if ( displayProgress )
+                finish( );
+            foreach ( string s in ( ( RavenJObject )jObject[ "characterData" ] ).Keys )
             {
-                var co = ((RavenJObject)((RavenJObject)jObject["characterData"])[s]);
-                CharBaseAttributes[int.Parse(s) - 1] = new Dictionary<string, float>() { { "+# to Strength", co["base_str"].Value<int>() }, { "+# to Dexterity", co["base_dex"].Value<int>() }, { "+# to Intelligence", co["base_int"].Value<int>() } };
+                var co = ( ( RavenJObject )( ( RavenJObject )jObject[ "characterData" ] )[ s ] );
+                CharBaseAttributes[ int.Parse( s ) - 1 ] = new Dictionary<string , float>( ) { { "+# to Strength" , co[ "base_str" ].Value<int>( ) } , { "+# to Dexterity" , co[ "base_dex" ].Value<int>( ) } , { "+# to Intelligence" , co[ "base_int" ].Value<int>( ) } };
             }
-            foreach (RavenJObject token in jObject["nodes"].Values())
+            foreach ( RavenJObject token in jObject[ "nodes" ].Values( ) )
             {
-                Skillnodes.Add(token["id"].Value<ushort>(), new SkillTree.SkillNode()
+                Skillnodes.Add( token[ "id" ].Value<ushort>( ) , new SkillTree.SkillNode( )
                 {
-                    id = token["id"].Value<UInt16>(),
-                    a = token["a"].Value<int>(),
-                    name = token["dn"].Value<string>(),
-                    attributes = token["sd"].Values<string>().ToArray(),
-                    orbit = token["o"].Value<int>(),
-                    orbitIndex = token["oidx"].Value<int>(),
-                    icon = token["icon"].Value<string>(),
-                    linkID = token["out"].Values<int>().ToList(),
-                    g = token["g"].Value<int>(),
-                    da = token["da"].Value<int>(),
-                    ia = token["ia"].Value<int>(),
-                    ks = token["ks"].Value<bool>(),
-                    not = token["not"].Value<bool>(),
-                    sa = token["sa"].Value<int>(),
-                    Mastery = token["m"].Value<bool>(),
-                });
+                    id = token[ "id" ].Value<UInt16>( ) ,
+                    a = token[ "a" ].Value<int>( ) ,
+                    name = token[ "dn" ].Value<string>( ) ,
+                    attributes = token[ "sd" ].Values<string>( ).ToArray( ) ,
+                    orbit = token[ "o" ].Value<int>( ) ,
+                    orbitIndex = token[ "oidx" ].Value<int>( ) ,
+                    icon = token[ "icon" ].Value<string>( ) ,
+                    linkID = token[ "out" ].Values<int>( ).ToList( ) ,
+                    g = token[ "g" ].Value<int>( ) ,
+                    da = token[ "da" ].Value<int>( ) ,
+                    ia = token[ "ia" ].Value<int>( ) ,
+                    ks = token[ "ks" ].Value<bool>( ) ,
+                    not = token[ "not" ].Value<bool>( ) ,
+                    sa = token[ "sa" ].Value<int>( ) ,
+                    Mastery = token[ "m" ].Value<bool>( ) ,
+                } );
             }
-            List<ushort[]> links = new List<ushort[]>();
-            foreach (var skillNode in Skillnodes)
+            List<ushort[]> links = new List<ushort[]>( );
+            foreach ( var skillNode in Skillnodes )
             {
-                foreach (ushort i in skillNode.Value.linkID)
+                foreach ( ushort i in skillNode.Value.linkID )
                 {
                     if (
                         links.Count(
-                            nd => (nd[0] == i && nd[1] == skillNode.Key) || nd[0] == skillNode.Key && nd[1] == i) ==
-                        1)
+                            nd => ( nd[ 0 ] == i && nd[ 1 ] == skillNode.Key ) || nd[ 0 ] == skillNode.Key && nd[ 1 ] == i ) ==
+                        1 )
                     {
                         continue;
                     }
-                    links.Add(new ushort[] { skillNode.Key, i });
+                    links.Add( new ushort[] { skillNode.Key , i } );
                 }
             }
-            foreach (ushort[] ints in links)
+            foreach ( ushort[] ints in links )
             {
-                if (!Skillnodes[ints[0]].Neighbor.Contains(Skillnodes[ints[1]]))
-                    Skillnodes[ints[0]].Neighbor.Add(Skillnodes[ints[1]]);
-                if (!Skillnodes[ints[1]].Neighbor.Contains(Skillnodes[ints[0]]))
-                    Skillnodes[ints[1]].Neighbor.Add(Skillnodes[ints[0]]);
+                if ( !Skillnodes[ ints[ 0 ] ].Neighbor.Contains( Skillnodes[ ints[ 1 ] ] ) )
+                    Skillnodes[ ints[ 0 ] ].Neighbor.Add( Skillnodes[ ints[ 1 ] ] );
+                if ( !Skillnodes[ ints[ 1 ] ].Neighbor.Contains( Skillnodes[ ints[ 0 ] ] ) )
+                    Skillnodes[ ints[ 1 ] ].Neighbor.Add( Skillnodes[ ints[ 0 ] ] );
             }
             // skillNode.Value.Neighbor.Add(Skillnodes[i]);
-            foreach (RavenJObject token in jObject["groups"].Values())
+            foreach ( RavenJObject token in jObject[ "groups" ].Values( ) )
             {
-                NodeGroup ng = new NodeGroup();
+                NodeGroup ng = new NodeGroup( );
 
-                ng.Nodes = token["n"].Values<int>().ToList();
-                if (!(token["oo"] is RavenJArray))
-                    ng.OcpOrb = ((RavenJObject)token["oo"]).ToDictionary(k => k.Key,
+                ng.Nodes = token[ "n" ].Values<int>( ).ToList( );
+                if ( !( token[ "oo" ] is RavenJArray ) )
+                    ng.OcpOrb = ( ( RavenJObject )token[ "oo" ] ).ToDictionary( k => k.Key ,
                                                                           k =>
-                                                                          k.Value.Value<bool>());
-                if ((token["oo"] is RavenJArray))
+                                                                          k.Value.Value<bool>( ) );
+                if ( ( token[ "oo" ] is RavenJArray ) )
                 {
-                    ng.OcpOrb.Add("0", true);
+                    ng.OcpOrb.Add( "0" , true );
                 }
-                ng.Position = new Vector2D(token["x"].Value<float>(), token["y"].Value<float>());
+                ng.Position = new Vector2D( token[ "x" ].Value<float>( ) , token[ "y" ].Value<float>( ) );
 
 
-                NodeGroups.Add(ng);
+                NodeGroups.Add( ng );
             }
-            foreach (SkillTree.NodeGroup @group in NodeGroups)
+            foreach ( SkillTree.NodeGroup @group in NodeGroups )
             {
-                foreach (ushort node in group.Nodes)
+                foreach ( ushort node in group.Nodes )
                 {
-                    Skillnodes[node].NodeGroup = group;
+                    Skillnodes[ node ].NodeGroup = group;
                 }
             }
 
-            TRect = new Rect2D(new Vector2D(jObject["min_x"].Value<float>() * 1.1, jObject["min_y"].Value<float>() * 1.1),
-                               new Vector2D(jObject["max_x"].Value<float>() * 1.1, jObject["max_y"].Value<float>() * 1.1));
-           
-
-         
-
-            InitNodeSurround();
-            DrawNodeSurround();
-            DrawNodeBaseSurround();
-            DrawSkillIconLayer();
-            DrawBackgroundLayer();
-            InitFaceBrushesAndLayer();
-            DrawLinkBackgroundLayer(links);
-            InitOtherDynamicLayers();
-            CreateCombineVisual();
+            TRect = new Rect2D( new Vector2D( jObject[ "min_x" ].Value<float>( ) * 1.1 , jObject[ "min_y" ].Value<float>( ) * 1.1 ) ,
+                               new Vector2D( jObject[ "max_x" ].Value<float>( ) * 1.1 , jObject[ "max_y" ].Value<float>( ) * 1.1 ) );
 
 
-            Regex regexAttrib = new Regex("[0-9]*\\.?[0-9]+");
-            foreach (var skillNode in Skillnodes)
+
+
+            InitNodeSurround( );
+            DrawNodeSurround( );
+            DrawNodeBaseSurround( );
+            DrawSkillIconLayer( );
+            DrawBackgroundLayer( );
+            InitFaceBrushesAndLayer( );
+            DrawLinkBackgroundLayer( links );
+            InitOtherDynamicLayers( );
+            CreateCombineVisual( );
+
+
+            Regex regexAttrib = new Regex( "[0-9]*\\.?[0-9]+" );
+            foreach ( var skillNode in Skillnodes )
             {
-                skillNode.Value.Attributes = new Dictionary<string, List<float>>();
-                foreach (string s in skillNode.Value.attributes)
+                skillNode.Value.Attributes = new Dictionary<string , List<float>>( );
+                foreach ( string s in skillNode.Value.attributes )
                 {
 
-                    List<float> values = new List<float>();
+                    List<float> values = new List<float>( );
 
-                    foreach (Match m in regexAttrib.Matches(s))
+                    foreach ( Match m in regexAttrib.Matches( s ) )
                     {
 
-                        if (!AttributeTypes.Contains(regexAttrib.Replace(s, "#"))) AttributeTypes.Add(regexAttrib.Replace(s, "#"));
-                        if (m.Value == "") values.Add(float.NaN);
-                        else values.Add(float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
+                        if ( !AttributeTypes.Contains( regexAttrib.Replace( s , "#" ) ) )
+                            AttributeTypes.Add( regexAttrib.Replace( s , "#" ) );
+                        if ( m.Value == "" )
+                            values.Add( float.NaN );
+                        else
+                            values.Add( float.Parse( m.Value , System.Globalization.CultureInfo.InvariantCulture ) );
 
                     }
-                    string cs = (regexAttrib.Replace(s, "#"));
-                   
-                        skillNode.Value.Attributes[cs] = values;
-                    
-                 
+                    string cs = ( regexAttrib.Replace( s , "#" ) );
+
+                    skillNode.Value.Attributes[ cs ] = values;
+
+
 
                 }
             }
 
-           
+
         }
-        public Dictionary<string, List<float>> ImplicitAttributes(Dictionary<string, List<float>> attribs)
+        public Dictionary<string , List<float>> ImplicitAttributes( Dictionary<string , List<float>> attribs )
         {
-            Dictionary<string, List<float>> retval = new Dictionary<string, List<float>>();
+            Dictionary<string, List<float>> retval = new Dictionary<string , List<float>>( );
             // +# to Strength", co["base_str"].Value<int>() }, { "+# to Dexterity", co["base_dex"].Value<int>() }, { "+# to Intelligence", co["base_int"].Value<int>() } };
-            retval["+# to maximum Mana"] = new List<float>() { attribs["+# to Intelligence"][0] / IntPerMana + level * ManaPerLevel };
-            retval["+#% Energy Shield"] = new List<float>() { attribs["+# to Intelligence"][0] / IntPerES };
+            retval[ "+# to maximum Mana" ] = new List<float>( ) { attribs[ "+# to Intelligence" ][ 0 ] / IntPerMana + level * ManaPerLevel };
+            retval[ "+#% Energy Shield" ] = new List<float>( ) { attribs[ "+# to Intelligence" ][ 0 ] / IntPerES };
 
-            retval["+# to maximum Life"] = new List<float>() { attribs["+# to Strength"][0] / IntPerMana + level * LifePerLevel };
-            retval["+#% increased Melee Physical Damage"] = new List<float>() { attribs["+# to Strength"][0] / StrPerED };
+            retval[ "+# to maximum Life" ] = new List<float>( ) { attribs[ "+# to Strength" ][ 0 ] / IntPerMana + level * LifePerLevel };
+            retval[ "+#% increased Melee Physical Damage" ] = new List<float>( ) { attribs[ "+# to Strength" ][ 0 ] / StrPerED };
 
-            retval["+# Accuracy Rating"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerAcc };
-            retval["Evasion Rating: #"] = new List<float>() { level*EvasPerLevel};
-            retval["#% increased Evasion Rating"] = new List<float>() { attribs["+# to Dexterity"][0] / DexPerEvas };
+            retval[ "+# Accuracy Rating" ] = new List<float>( ) { attribs[ "+# to Dexterity" ][ 0 ] / DexPerAcc };
+            retval[ "Evasion Rating: #" ] = new List<float>( ) { level * EvasPerLevel };
+            retval[ "#% increased Evasion Rating" ] = new List<float>( ) { attribs[ "+# to Dexterity" ][ 0 ] / DexPerEvas };
             return retval;
         }
         public int Level
         {
-            get { return level; }
-            set { level = value; }
+            get
+            {
+                return level;
+            }
+            set
+            {
+                level = value;
+            }
         }
         public int Chartype
         {
-            get { return chartype; }
+            get
+            {
+                return chartype;
+            }
             set
             {
 
                 chartype = value;
-                SkilledNodes.Clear();
-                var node = Skillnodes.First(nd => nd.Value.name == CharName[chartype]);
-                SkilledNodes.Add(node.Value.id);
-                UpdateAvailNodes();
-                DrawFaces();
+                SkilledNodes.Clear( );
+                var node = Skillnodes.First( nd => nd.Value.name == CharName[ chartype ] );
+                SkilledNodes.Add( node.Value.id );
+                UpdateAvailNodes( );
+                DrawFaces( );
             }
         }
-        public List<ushort> GetShortestPathTo(ushort targetNode)
+        public List<ushort> GetShortestPathTo( ushort targetNode )
         {
-            if (SkilledNodes.Contains(targetNode)) return new List<ushort>();
-            if (AvailNodes.Contains(targetNode)) return new List<ushort>() { targetNode };
-            HashSet<ushort> visited = new HashSet<ushort>(SkilledNodes);
-            Dictionary<int, int> distance = new Dictionary<int, int>();
-            Dictionary<ushort, ushort> parent = new Dictionary<ushort, ushort>();
-            Queue<ushort> newOnes = new Queue<ushort>();
-            foreach (var node in SkilledNodes)
+            if ( SkilledNodes.Contains( targetNode ) )
+                return new List<ushort>( );
+            if ( AvailNodes.Contains( targetNode ) )
+                return new List<ushort>( ) { targetNode };
+            HashSet<ushort> visited = new HashSet<ushort>( SkilledNodes );
+            Dictionary<int, int> distance = new Dictionary<int , int>( );
+            Dictionary<ushort, ushort> parent = new Dictionary<ushort , ushort>( );
+            Queue<ushort> newOnes = new Queue<ushort>( );
+            foreach ( var node in SkilledNodes )
             {
-                distance.Add(node, 0);
+                distance.Add( node , 0 );
             }
-            foreach (var node in AvailNodes)
+            foreach ( var node in AvailNodes )
             {
-                newOnes.Enqueue(node);
-                distance.Add(node, 1);
+                newOnes.Enqueue( node );
+                distance.Add( node , 1 );
             }
-            while (newOnes.Count > 0)
+            while ( newOnes.Count > 0 )
             {
-                ushort newNode = newOnes.Dequeue();
-                int dis = distance[newNode];
-                visited.Add(newNode);
-                foreach (var connection in Skillnodes[newNode].Neighbor.Select(nd => nd.id))
+                ushort newNode = newOnes.Dequeue( );
+                int dis = distance[ newNode ];
+                visited.Add( newNode );
+                foreach ( var connection in Skillnodes[ newNode ].Neighbor.Select( nd => nd.id ) )
                 {
-                    if (visited.Contains(connection)) continue;
-                    if (distance.ContainsKey(connection)) continue;
-                    if (CharName.Contains(Skillnodes[connection].name)) continue;
-                    if (Skillnodes[newNode].Mastery) continue;
-                    distance.Add(connection, dis + 1);
-                    newOnes.Enqueue(connection);
+                    if ( visited.Contains( connection ) )
+                        continue;
+                    if ( distance.ContainsKey( connection ) )
+                        continue;
+                    if ( CharName.Contains( Skillnodes[ connection ].name ) )
+                        continue;
+                    if ( Skillnodes[ newNode ].Mastery )
+                        continue;
+                    distance.Add( connection , dis + 1 );
+                    newOnes.Enqueue( connection );
 
-                    parent.Add(connection, newNode);
+                    parent.Add( connection , newNode );
 
-                    if (connection == targetNode) break;
+                    if ( connection == targetNode )
+                        break;
                 }
             }
 
-            if (!distance.ContainsKey(targetNode)) return new List<ushort>();
+            if ( !distance.ContainsKey( targetNode ) )
+                return new List<ushort>( );
 
-            Stack<ushort> path = new Stack<ushort>();
+            Stack<ushort> path = new Stack<ushort>( );
             ushort curr = targetNode;
-            path.Push(curr);
-            while (parent.ContainsKey(curr))
+            path.Push( curr );
+            while ( parent.ContainsKey( curr ) )
             {
-                path.Push(parent[curr]);
-                curr = parent[curr];
+                path.Push( parent[ curr ] );
+                curr = parent[ curr ];
             }
 
-            List<ushort> result = new List<ushort>();
-            while (path.Count > 0)
-                result.Add(path.Pop());
+            List<ushort> result = new List<ushort>( );
+            while ( path.Count > 0 )
+                result.Add( path.Pop( ) );
 
             return result;
         }
-        public HashSet<ushort> ForceRefundNodePreview(ushort nodeId)
+        public HashSet<ushort> ForceRefundNodePreview( ushort nodeId )
         {
-            if (!SkilledNodes.Remove(nodeId)) return new HashSet<ushort>();
+            if ( !SkilledNodes.Remove( nodeId ) )
+                return new HashSet<ushort>( );
 
-            SkilledNodes.Remove(nodeId);
+            SkilledNodes.Remove( nodeId );
 
-            HashSet<ushort> front = new HashSet<ushort>();
-            front.Add(SkilledNodes.First());
-            foreach (var i in Skillnodes[SkilledNodes.First()].Neighbor)
-                if (SkilledNodes.Contains(i.id))
-                    front.Add(i.id);
+            HashSet<ushort> front = new HashSet<ushort>( );
+            front.Add( SkilledNodes.First( ) );
+            foreach ( var i in Skillnodes[ SkilledNodes.First( ) ].Neighbor )
+                if ( SkilledNodes.Contains( i.id ) )
+                    front.Add( i.id );
 
-            HashSet<ushort> skilled_reachable = new HashSet<ushort>(front);
-            while (front.Count > 0)
+            HashSet<ushort> skilled_reachable = new HashSet<ushort>( front );
+            while ( front.Count > 0 )
             {
-                HashSet<ushort> newFront = new HashSet<ushort>();
-                foreach (var i in front)
-                    foreach (var j in Skillnodes[i].Neighbor.Select(nd => nd.id))
-                        if (!skilled_reachable.Contains(j) && SkilledNodes.Contains(j))
+                HashSet<ushort> newFront = new HashSet<ushort>( );
+                foreach ( var i in front )
+                    foreach ( var j in Skillnodes[ i ].Neighbor.Select( nd => nd.id ) )
+                        if ( !skilled_reachable.Contains( j ) && SkilledNodes.Contains( j ) )
                         {
-                            newFront.Add(j);
-                            skilled_reachable.Add(j);
+                            newFront.Add( j );
+                            skilled_reachable.Add( j );
                         }
 
                 front = newFront;
             }
 
-            HashSet<ushort> unreachable = new HashSet<ushort>(SkilledNodes);
-            foreach (var i in skilled_reachable)
-                unreachable.Remove(i);
-            unreachable.Add(nodeId);
+            HashSet<ushort> unreachable = new HashSet<ushort>( SkilledNodes );
+            foreach ( var i in skilled_reachable )
+                unreachable.Remove( i );
+            unreachable.Add( nodeId );
 
-            SkilledNodes.Add(nodeId);
+            SkilledNodes.Add( nodeId );
 
             return unreachable;
         }
-        public void ForceRefundNode(ushort nodeId)
+        public void ForceRefundNode( ushort nodeId )
         {
-            if (!SkilledNodes.Remove(nodeId)) throw new InvalidOperationException();
+            if ( !SkilledNodes.Remove( nodeId ) )
+                throw new InvalidOperationException( );
 
             //SkilledNodes.Remove(nodeId);
 
-            HashSet<ushort> front = new HashSet<ushort>();
-            front.Add(SkilledNodes.First());
-            foreach (var i in Skillnodes[SkilledNodes.First()].Neighbor)
-                if (SkilledNodes.Contains(i.id))
-                    front.Add(i.id);
-            HashSet<ushort> skilled_reachable = new HashSet<ushort>(front);
-            while (front.Count > 0)
+            HashSet<ushort> front = new HashSet<ushort>( );
+            front.Add( SkilledNodes.First( ) );
+            foreach ( var i in Skillnodes[ SkilledNodes.First( ) ].Neighbor )
+                if ( SkilledNodes.Contains( i.id ) )
+                    front.Add( i.id );
+            HashSet<ushort> skilled_reachable = new HashSet<ushort>( front );
+            while ( front.Count > 0 )
             {
-                HashSet<ushort> newFront = new HashSet<ushort>();
-                foreach (var i in front)
-                    foreach (var j in Skillnodes[i].Neighbor.Select(nd => nd.id))
-                        if (!skilled_reachable.Contains(j) && SkilledNodes.Contains(j))
+                HashSet<ushort> newFront = new HashSet<ushort>( );
+                foreach ( var i in front )
+                    foreach ( var j in Skillnodes[ i ].Neighbor.Select( nd => nd.id ) )
+                        if ( !skilled_reachable.Contains( j ) && SkilledNodes.Contains( j ) )
                         {
-                            newFront.Add(j);
-                            skilled_reachable.Add(j);
+                            newFront.Add( j );
+                            skilled_reachable.Add( j );
                         }
 
                 front = newFront;
             }
 
             SkilledNodes = skilled_reachable;
-            AvailNodes = new HashSet<ushort>();
-            UpdateAvailNodes();
+            AvailNodes = new HashSet<ushort>( );
+            UpdateAvailNodes( );
         }
-        public void LoadFromURL(string url)
+        public void LoadFromURL( string url )
         {
-            string s = url.Substring(TreeAddress.Length).Replace("-", "+").Replace("_", "/");
-            byte[] decbuff = Convert.FromBase64String(s);
-            var i = BitConverter.ToInt32(new byte[] { decbuff[3], decbuff[2], decbuff[1], decbuff[1] }, 0);
-            var b = decbuff[4];
-            var j = 0L; if (i > 0) j = decbuff[5];
-            List<UInt16> nodes = new List<UInt16>();
-            for (int k = 6; k < decbuff.Length; k += 2)
+            string s = url.Substring(TreeAddress.Length+( url.StartsWith("https")?1:0)).Replace( "-" , "+" ).Replace( "_" , "/" );
+            byte[] decbuff = Convert.FromBase64String( s );
+            var i = BitConverter.ToInt32( new byte[] { decbuff[ 3 ] , decbuff[ 2 ] , decbuff[ 1 ] , decbuff[ 1 ] } , 0 );
+            var b = decbuff[ 4 ];
+            var j = 0L;
+            if ( i > 0 )
+                j = decbuff[ 5 ];
+            List<UInt16> nodes = new List<UInt16>( );
+            for ( int k = 6 ; k < decbuff.Length ; k += 2 )
             {
-                byte[] dbff = new byte[] { decbuff[k + 1], decbuff[k + 0] };
-               if (Skillnodes.Keys.Contains(BitConverter.ToUInt16(dbff, 0)))
-                    nodes.Add((BitConverter.ToUInt16(dbff, 0)));
+                byte[] dbff = new byte[] { decbuff[ k + 1 ] , decbuff[ k + 0 ] };
+                if ( Skillnodes.Keys.Contains( BitConverter.ToUInt16( dbff , 0 ) ) )
+                    nodes.Add( ( BitConverter.ToUInt16( dbff , 0 ) ) );
 
             }
             Chartype = b - 1;
-            SkilledNodes.Clear();
-            SkillTree.SkillNode startnode = Skillnodes.First(nd => nd.Value.name == CharName[Chartype].ToUpper()).Value;
-            SkilledNodes.Add(startnode.id);
-            foreach (ushort node in nodes)
+            SkilledNodes.Clear( );
+            SkillTree.SkillNode startnode = Skillnodes.First( nd => nd.Value.name == CharName[ Chartype ].ToUpper( ) ).Value;
+            SkilledNodes.Add( startnode.id );
+            foreach ( ushort node in nodes )
             {
-                SkilledNodes.Add(node);
+                SkilledNodes.Add( node );
             }
-            UpdateAvailNodes();
+            UpdateAvailNodes( );
         }
-        public string SaveToURL()
+        public string SaveToURL( )
         {
-            byte[] b = new byte[(SkilledNodes.Count - 1) * 2 + 6];
-            var b2 = BitConverter.GetBytes(2);
-            b[0] = b2[3];
-            b[1] = b2[2];
-            b[2] = b2[1];
-            b[3] = b2[0];
-            b[4] = (byte)(Chartype + 1);
-            b[5] = (byte)(0);
+            byte[] b = new byte[ ( SkilledNodes.Count - 1 ) * 2 + 6 ];
+            var b2 = BitConverter.GetBytes( 2 );
+            b[ 0 ] = b2[ 3 ];
+            b[ 1 ] = b2[ 2 ];
+            b[ 2 ] = b2[ 1 ];
+            b[ 3 ] = b2[ 0 ];
+            b[ 4 ] = ( byte )( Chartype + 1 );
+            b[ 5 ] = ( byte )( 0 );
             int pos = 6;
-            foreach (var inn in SkilledNodes)
+            foreach ( var inn in SkilledNodes )
             {
-                if (CharName.Contains(Skillnodes[inn].name)) continue;
-                byte[] dbff = BitConverter.GetBytes((Int16)inn);
-                b[pos++] = dbff[1];
-                b[pos++] = dbff[0];
+                if ( CharName.Contains( Skillnodes[ inn ].name ) )
+                    continue;
+                byte[] dbff = BitConverter.GetBytes( ( Int16 )inn );
+                b[ pos++ ] = dbff[ 1 ];
+                b[ pos++ ] = dbff[ 0 ];
             }
-            return TreeAddress + Convert.ToBase64String(b).Replace("/", "_").Replace("+", "-");
+            return TreeAddress + Convert.ToBase64String( b ).Replace( "/" , "_" ).Replace( "+" , "-" );
 
         }
-        public void UpdateAvailNodes()
+        public void UpdateAvailNodes( )
         {
-            AvailNodes.Clear();
-            foreach (ushort inode in SkilledNodes)
+            AvailNodes.Clear( );
+            foreach ( ushort inode in SkilledNodes )
             {
-                SkillNode node = Skillnodes[inode];
-                foreach (SkillNode skillNode in node.Neighbor)
+                SkillNode node = Skillnodes[ inode ];
+                foreach ( SkillNode skillNode in node.Neighbor )
                 {
-                    if (!CharName.Contains(skillNode.name) && !SkilledNodes.Contains(skillNode.id))
-                        AvailNodes.Add(skillNode.id);
+                    if ( !CharName.Contains( skillNode.name ) && !SkilledNodes.Contains( skillNode.id ) )
+                        AvailNodes.Add( skillNode.id );
                 }
             }
             //  picActiveLinks = new DrawingVisual();
 
-            Pen pen2 = new Pen(Brushes.Yellow, 15f);
+            Pen pen2 = new Pen( Brushes.Yellow , 15f );
 
-            using (DrawingContext dc = picActiveLinks.RenderOpen())
+            using ( DrawingContext dc = picActiveLinks.RenderOpen( ) )
             {
-                foreach (var n1 in SkilledNodes)
+                foreach ( var n1 in SkilledNodes )
                 {
-                    foreach (var n2 in Skillnodes[n1].Neighbor)
+                    foreach ( var n2 in Skillnodes[ n1 ].Neighbor )
                     {
-                        if (SkilledNodes.Contains(n2.id))
+                        if ( SkilledNodes.Contains( n2.id ) )
                         {
-                            DrawConnection(dc, pen2, n2, Skillnodes[n1]);
+                            DrawConnection( dc , pen2 , n2 , Skillnodes[ n1 ] );
                         }
                     }
                 }
             }
             // picActiveLinks.Clear();
-            DrawNodeSurround();
+            DrawNodeSurround( );
         }
-        public Dictionary<string, List<float>> SelectedAttributes
+        public Dictionary<string , List<float>> SelectedAttributes
         {
             get
             {
                 Dictionary<string, List<float>> temp = SelectedAttributesWithoutImplicit;
 
-                foreach (var a in ImplicitAttributes(temp))
+                foreach ( var a in ImplicitAttributes( temp ) )
                 {
-                    if (!temp.ContainsKey(a.Key))
-                        temp[a.Key] = new List<float>();
-                    for (int i = 0; i < a.Value.Count; i++)
+                    if ( !temp.ContainsKey( a.Key ) )
+                        temp[ a.Key ] = new List<float>( );
+                    for ( int i = 0 ; i < a.Value.Count ; i++ )
                     {
 
-                        if (temp.ContainsKey(a.Key) && temp[a.Key].Count > i)
-                            temp[a.Key][i] += a.Value[i];
+                        if ( temp.ContainsKey( a.Key ) && temp[ a.Key ].Count > i )
+                            temp[ a.Key ][ i ] += a.Value[ i ];
                         else
                         {
-                            temp[a.Key].Add(a.Value[i]);
+                            temp[ a.Key ].Add( a.Value[ i ] );
                         }
                     }
                 }
                 return temp;
             }
         }
-        public Dictionary<string, List<float>> SelectedAttributesWithoutImplicit
+        public Dictionary<string , List<float>> SelectedAttributesWithoutImplicit
         {
             get
             {
-                Dictionary<string, List<float>> temp = new Dictionary<string, List<float>>();
-                foreach (var attr in CharBaseAttributes[Chartype])
+                Dictionary<string, List<float>> temp = new Dictionary<string , List<float>>( );
+                foreach ( var attr in CharBaseAttributes[ Chartype ] )
                 {
-                    if (!temp.ContainsKey(attr.Key))
-                        temp[attr.Key] = new List<float>();
+                    if ( !temp.ContainsKey( attr.Key ) )
+                        temp[ attr.Key ] = new List<float>( );
 
-                    if (temp.ContainsKey(attr.Key) && temp[attr.Key].Count > 0)
-                        temp[attr.Key][0] += attr.Value;
+                    if ( temp.ContainsKey( attr.Key ) && temp[ attr.Key ].Count > 0 )
+                        temp[ attr.Key ][ 0 ] += attr.Value;
                     else
                     {
-                        temp[attr.Key].Add(attr.Value);
+                        temp[ attr.Key ].Add( attr.Value );
                     }
                 }
 
-                foreach (var attr in BaseAttributes)
+                foreach ( var attr in BaseAttributes )
                 {
-                    if (!temp.ContainsKey(attr.Key))
-                        temp[attr.Key] = new List<float>();
+                    if ( !temp.ContainsKey( attr.Key ) )
+                        temp[ attr.Key ] = new List<float>( );
 
-                    if (temp.ContainsKey(attr.Key) && temp[attr.Key].Count > 0)
-                        temp[attr.Key][0] += attr.Value;
+                    if ( temp.ContainsKey( attr.Key ) && temp[ attr.Key ].Count > 0 )
+                        temp[ attr.Key ][ 0 ] += attr.Value;
                     else
                     {
-                        temp[attr.Key].Add(attr.Value);
+                        temp[ attr.Key ].Add( attr.Value );
                     }
                 }
 
-                foreach (ushort inode in SkilledNodes)
+                foreach ( ushort inode in SkilledNodes )
                 {
-                    SkillNode node = Skillnodes[inode];
-                    foreach (var attr in node.Attributes)
+                    SkillNode node = Skillnodes[ inode ];
+                    foreach ( var attr in node.Attributes )
                     {
-                        if (!temp.ContainsKey(attr.Key))
-                            temp[attr.Key] = new List<float>();
-                        for (int i = 0; i < attr.Value.Count; i++)
+                        if ( !temp.ContainsKey( attr.Key ) )
+                            temp[ attr.Key ] = new List<float>( );
+                        for ( int i = 0 ; i < attr.Value.Count ; i++ )
                         {
 
-                            if (temp.ContainsKey(attr.Key) && temp[attr.Key].Count > i)
-                                temp[attr.Key][i] += attr.Value[i];
+                            if ( temp.ContainsKey( attr.Key ) && temp[ attr.Key ].Count > i )
+                                temp[ attr.Key ][ i ] += attr.Value[ i ];
                             else
                             {
-                                temp[attr.Key].Add(attr.Value[i]);
+                                temp[ attr.Key ].Add( attr.Value[ i ] );
                             }
                         }
 
                     }
                 }
-               
+
                 return temp;
             }
         }
         public class SkillIcons
         {
-            
+
             public enum IconType
             {
-                normal,
-                notable,
+                normal ,
+                notable ,
                 keystone
             }
 
-            public Dictionary<string, KeyValuePair<Rect, string>> SkillPositions = new Dictionary<string,KeyValuePair<Rect, string>>();
-            public Dictionary<String,BitmapImage> Images = new Dictionary<string, BitmapImage>();
+            public Dictionary<string, KeyValuePair<Rect, string>> SkillPositions = new Dictionary<string , KeyValuePair<Rect , string>>( );
+            public Dictionary<String,BitmapImage> Images = new Dictionary<string , BitmapImage>( );
             public static string urlpath = "http://www.pathofexile.com/image/build-gen/passive-skill-sprite/";
-            public void OpenOrDownloadImages()
+            public void OpenOrDownloadImages( UpdateLoadingWindow update = null )
             {
-                LoadingWindow loadingWindow = new LoadingWindow();
-                loadingWindow.progressBar1.Maximum = Images.Keys.Count + 1;
-                loadingWindow.Show();
                 //Application
                 int count = 0;
-                foreach (var image in Images.Keys.ToArray())
+                foreach ( var image in Images.Keys.ToArray( ) )
                 {
-                    //loadingWindow.Dispatcher.Invoke(DispatcherPriority.Background,new Action(delegate { }));
-                    loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
-
-                        if (!File.Exists("Data\\Assets\\" + image))
-                        {
-                            System.Net.WebClient _WebClient = new System.Net.WebClient();
-                            _WebClient.DownloadFile(urlpath + image, "Data\\Assets\\" + image);
-                        }
-                        Images[image] = new BitmapImage(new Uri("Data\\Assets\\" + image, UriKind.Relative));
-
-                    loadingWindow.progressBar1.Value = count;
+                    if ( !File.Exists( "Data\\Assets\\" + image ) )
+                    {
+                        System.Net.WebClient _WebClient = new System.Net.WebClient( );
+                        _WebClient.DownloadFile( urlpath + image , "Data\\Assets\\" + image );
+                    }
+                    Images[ image ] = new BitmapImage( new Uri( "Data\\Assets\\" + image , UriKind.Relative ) );
+                    if ( update != null )
+                        update( count *100/ Images.Count, 100 );
                     ++count;
                 }
-                loadingWindow.Close();
             }
         }
         public class NodeGroup
         {
             public Vector2D Position;// "x": 1105.14,"y": -5295.31,
-            public Dictionary<string, bool> OcpOrb = new Dictionary<string, bool>(); //  "oo": {"1": true},
-            public List<int> Nodes = new List<int>();// "n": [-28194677,769796679,-1093139159]
+            public Dictionary<string, bool> OcpOrb = new Dictionary<string , bool>( ); //  "oo": {"1": true},
+            public List<int> Nodes = new List<int>( );// "n": [-28194677,769796679,-1093139159]
 
         }
         public class SkillNode
         {
-            static public float[] skillsPerOrbit = { 1, 6, 12, 12, 12 };
-            static public float[] orbitRadii = { 0, 81.5f, 163, 326, 489 };
-            public HashSet<int> Connections = new HashSet<int>();
+            static public float[] skillsPerOrbit = { 1 , 6 , 12 , 12 , 12 };
+            static public float[] orbitRadii = { 0 , 81.5f , 163 , 326 , 489 };
+            public HashSet<int> Connections = new HashSet<int>( );
             public bool skilled = false;
             public UInt16 id; // "id": -28194677,
             public string icon;// icon "icon": "Art/2DArt/SkillIcons/passives/tempint.png",
@@ -672,23 +682,26 @@ namespace POESKillTree
             public int sa;//s "sa": 0,
             public int da;// "da": 0,
             public int ia;//"ia": 0,
-            public List<int> linkID = new List<int>();// "out": []
+            public List<int> linkID = new List<int>( );// "out": []
             public bool Mastery;
 
-            public List<SkillNode> Neighbor = new List<SkillNode>();
+            public List<SkillNode> Neighbor = new List<SkillNode>( );
             public NodeGroup NodeGroup;
             public Vector2D Position
             {
                 get
                 {
-                    double d = orbitRadii[this.orbit];
-                    double b = (2 * Math.PI * this.orbitIndex / skillsPerOrbit[this.orbit]);
-                    return (NodeGroup.Position - new Vector2D(d * Math.Sin(-b), d * Math.Cos(-b)));
+                    double d = orbitRadii[ this.orbit ];
+                    double b = ( 2 * Math.PI * this.orbitIndex / skillsPerOrbit[ this.orbit ] );
+                    return ( NodeGroup.Position - new Vector2D( d * Math.Sin( -b ) , d * Math.Cos( -b ) ) );
                 }
             }
             public double Arc
             {
-                get { return (2 * Math.PI * this.orbitIndex / skillsPerOrbit[this.orbit]); }
+                get
+                {
+                    return ( 2 * Math.PI * this.orbitIndex / skillsPerOrbit[ this.orbit ] );
+                }
             }
         }
         public class Asset
@@ -696,82 +709,84 @@ namespace POESKillTree
             public string Name;
             public BitmapImage PImage;
             public string URL;
-            public Asset(string name, string url)
+            public Asset( string name , string url )
             {
                 Name = name;
                 URL = url;
-                if (!File.Exists("Data\\Assets\\" + Name + ".png"))
+                if ( !File.Exists( "Data\\Assets\\" + Name + ".png" ) )
                 {
 
-                    System.Net.WebClient _WebClient = new System.Net.WebClient();
-                    _WebClient.DownloadFile(URL, "Data\\Assets\\" + Name + ".png");
+                    System.Net.WebClient _WebClient = new System.Net.WebClient( );
+                    _WebClient.DownloadFile( URL , "Data\\Assets\\" + Name + ".png" );
 
 
 
                 }
-                PImage = new BitmapImage(new Uri("Data\\Assets\\" + Name + ".png", UriKind.Relative));
+                PImage = new BitmapImage( new Uri( "Data\\Assets\\" + Name + ".png" , UriKind.Relative ) );
 
             }
 
         }
 
-        public void HighlightNodes(string search, bool useregex  )
+        public void HighlightNodes( string search , bool useregex )
         {
-            if (search == "")
+            if ( search == "" )
             {
-                DrawHighlights(highlightnodes= new List<SkillTree.SkillNode>());
+                DrawHighlights( highlightnodes = new List<SkillTree.SkillNode>( ) );
                 highlightnodes = null;
                 return;
             }
 
-            if (useregex)
+            if ( useregex )
             {
                 try
                 {
-                    List<SkillTree.SkillNode> nodes = highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => new Regex(search, RegexOptions.IgnoreCase).IsMatch(att)).Count() > 0 || new Regex(search, RegexOptions.IgnoreCase).IsMatch(nd.name) && !nd.Mastery).ToList();
-                    DrawHighlights(highlightnodes);
+                    List<SkillTree.SkillNode> nodes = highlightnodes = Skillnodes.Values.Where( nd => nd.attributes.Where( att => new Regex( search , RegexOptions.IgnoreCase ).IsMatch( att ) ).Count( ) > 0 || new Regex( search , RegexOptions.IgnoreCase ).IsMatch( nd.name ) && !nd.Mastery ).ToList( );
+                    DrawHighlights( highlightnodes );
                 }
-                catch (Exception)
-                { }
+                catch ( Exception )
+                {
+                }
 
             }
             else
             {
-                highlightnodes = Skillnodes.Values.Where(nd => nd.attributes.Where(att => att.ToLower().Contains(search.ToLower())).Count() != 0 || nd.name.ToLower().Contains(search.ToLower())&& !nd.Mastery).ToList();
-                
-                DrawHighlights(highlightnodes);
+                highlightnodes = Skillnodes.Values.Where( nd => nd.attributes.Where( att => att.ToLower( ).Contains( search.ToLower( ) ) ).Count( ) != 0 || nd.name.ToLower( ).Contains( search.ToLower( ) ) && !nd.Mastery ).ToList( );
+
+                DrawHighlights( highlightnodes );
             }
         }
-        public void SkillAllHighligtedNodes()
+        public void SkillAllHighligtedNodes( )
         {
-            if (highlightnodes == null) return;
-            HashSet<int> nodes = new HashSet<int>();
-            foreach (var nd in highlightnodes)
+            if ( highlightnodes == null )
+                return;
+            HashSet<int> nodes = new HashSet<int>( );
+            foreach ( var nd in highlightnodes )
             {
-                nodes.Add(nd.id);
+                nodes.Add( nd.id );
             }
-            SkillStep(nodes);
+            SkillStep( nodes );
 
         }
-        private HashSet<int> SkillStep(HashSet<int> hs)
+        private HashSet<int> SkillStep( HashSet<int> hs )
         {
-            List<List<ushort>> pathes = new List<List<ushort>>();
-            foreach (var nd in highlightnodes)
+            List<List<ushort>> pathes = new List<List<ushort>>( );
+            foreach ( var nd in highlightnodes )
             {
-                pathes.Add(GetShortestPathTo(nd.id));
+                pathes.Add( GetShortestPathTo( nd.id ) );
 
 
             }
-            pathes.Sort((p1, p2) => p1.Count.CompareTo(p2.Count));
-            pathes.RemoveAll(p => p.Count == 0);
-            foreach (ushort i in pathes[0])
+            pathes.Sort( ( p1 , p2 ) => p1.Count.CompareTo( p2.Count ) );
+            pathes.RemoveAll( p => p.Count == 0 );
+            foreach ( ushort i in pathes[ 0 ] )
             {
-                hs.Remove(i);
-                SkilledNodes.Add(i);
+                hs.Remove( i );
+                SkilledNodes.Add( i );
             }
-            UpdateAvailNodes();
+            UpdateAvailNodes( );
 
-            return hs.Count == 0 ? hs : SkillStep(hs);
+            return hs.Count == 0 ? hs : SkillStep( hs );
         }
 
     }

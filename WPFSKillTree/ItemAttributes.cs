@@ -24,7 +24,8 @@ namespace POESKillTree
                 Helm,
                 Gloves,
                 Boots,
-                Gem
+                Gem,
+                Belt
             }
 
             public class Mod
@@ -145,7 +146,7 @@ namespace POESKillTree
                 {
                     get
                     {
-                        return (itemclass != Item.ItemClass.Amulet && itemclass != Item.ItemClass.Ring) &&
+                        return ( itemclass != Item.ItemClass.Amulet && itemclass != Item.ItemClass.Ring && itemclass != Item.ItemClass.Belt ) &&
                               (Attribute.Contains("increased Physical Damage") ||
                                 Attribute.Contains("Armour") ||
                                 Attribute.Contains("Evasion") ||
@@ -412,6 +413,11 @@ namespace POESKillTree
                 {
                     AddItem(jobj, Item.ItemClass.Amulet);
                 }
+                if ( id == "Belt" )
+                {
+                    AddItem( jobj , Item.ItemClass.Belt );
+                }
+                
 
 
             }

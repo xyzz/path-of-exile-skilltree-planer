@@ -68,14 +68,18 @@ namespace POESKillTree
                 dc.DrawRectangle(BackgroundBrush, null, TRect);
                 foreach (var ngp in NodeGroups)
                 {
-                    int maxr = ngp.OcpOrb.Keys.Max(ng => int.Parse(ng));
+
+                    var cgrp = ngp.OcpOrb.Keys.Where(ng => int.Parse(ng) <= 3);
+                    if (cgrp.Count()==0)continue;
+                    int maxr = cgrp.Max( ng => int.Parse( ng ) );
                     if (maxr == 0) continue;
                     maxr = maxr > 3 ? 2 : maxr - 1;
                     int maxfac = maxr == 2 ? 2 : 1;
                     dc.DrawRectangle(OrbitBrush[maxr], null,
                                      new Rect(
-                                         ngp.Position - new Vector2D(iscr[maxr].PixelWidth, iscr[maxr].PixelHeight * maxfac),
-                                         new Size(iscr[maxr].PixelWidth * 2, iscr[maxr].PixelHeight * 2 * maxfac)));
+                                         ngp.Position - new Vector2D(iscr[maxr].PixelWidth*1.5, iscr[maxr].PixelHeight*1.5 * maxfac),
+                                         new Size(iscr[maxr].PixelWidth * 3, iscr[maxr].PixelHeight * 3 * maxfac)));
+                  
                 }
             }
         }
