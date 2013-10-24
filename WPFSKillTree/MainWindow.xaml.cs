@@ -148,7 +148,7 @@ namespace POESKillTree
 
             if ( Tree == null )
                 return;
-            SkillTree.SkillNode startnode = Tree.Skillnodes.First( nd => nd.Value.name == ( Tree.CharName[ cbCharType.SelectedIndex ] ).ToUpper( ) ).Value;
+            SkillTree.SkillNode startnode = Tree.Skillnodes.First( nd => nd.Value.name.ToUpper() == ( Tree.CharName[ cbCharType.SelectedIndex ] ).ToUpper( ) ).Value;
             Tree.SkilledNodes.Clear( );
             Tree.SkilledNodes.Add( startnode.id );
             Tree.Chartype = Tree.CharName.IndexOf( ( Tree.CharName[ cbCharType.SelectedIndex ] ).ToUpper( ) );

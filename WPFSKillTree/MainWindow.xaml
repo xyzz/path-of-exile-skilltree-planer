@@ -67,6 +67,7 @@
             </Grid>
         </Expander>
         <ComboBox Height="23" HorizontalAlignment="Left" Margin="54,12,0,0" x:Name="cbCharType" VerticalAlignment="Top" Width="75.667" SelectionChanged="comboBox1_SelectionChanged">
+            <ComboBoxItem Content="Scion" />
             <ComboBoxItem Content="Marauder" />
             <ComboBoxItem Content="Ranger" />
             <ComboBoxItem Content="Witch" IsSelected="True" />

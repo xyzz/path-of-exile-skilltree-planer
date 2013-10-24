@@ -63,70 +63,7 @@ namespace POESKillTree
                             Value = values,
                             Attribute = "+# to Intelligence"
                         });
-                    }
-                    //else if (at == "#% increased Elemental Damage")
-                    //{
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Fire Damage"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Cold Damage"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Cold Damage"
-                    //    });
-                    //   }
-                    //else if (at == "#% increased Elemental Damage with Weapons")
-                    //{
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Fire Damage with Weapons"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Cold Damage with Weapons"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "#% increased Lightning Damage with Weapons"
-                    //    });
-                    //}
-                    //else if (at == "+#% to all Elemental Resistances")
-                    //{
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "+#% to Fire Resistance"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "+#% to Cold Resistance"
-                    //    });
-                    //    mods.Add(new Mod()
-                    //    {
-                    //        itemclass = ic,
-                    //        Value = values,
-                    //        Attribute = "+#% to Lightning Resistance"
-                    //    });
-                    //}
+                    }        
                     else
                     {
                         mods.Add(new Mod()
@@ -155,9 +92,6 @@ namespace POESKillTree
                                 Attribute.Contains("Critical Strike Chance with this Weapon") ||
                                 Attribute.Contains("Critical Strike Damage Multiplier with this Weapon")) ||
                                ((itemclass == Item.ItemClass.MainHand ||itemclass == Item.ItemClass.OffHand)&&  Attribute.Contains("increased Attack Speed"));
-
-
-
                     }
                 }
             }

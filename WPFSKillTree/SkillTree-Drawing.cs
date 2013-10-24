@@ -68,10 +68,11 @@ namespace POESKillTree
                 dc.DrawRectangle(BackgroundBrush, null, TRect);
                 foreach (var ngp in NodeGroups)
                 {
-
-                    var cgrp = ngp.OcpOrb.Keys.Where(ng => int.Parse(ng) <= 3);
+                    if (ngp.OcpOrb == null)
+                        ngp.OcpOrb = new Dictionary<int, bool>();
+                    var cgrp = ngp.OcpOrb.Keys.Where(ng => ng <= 3);
                     if (cgrp.Count()==0)continue;
-                    int maxr = cgrp.Max( ng => int.Parse( ng ) );
+                    int maxr = cgrp.Max( ng => ng );
                     if (maxr == 0) continue;
                     maxr = maxr > 3 ? 2 : maxr - 1;
                     int maxfac = maxr == 2 ? 2 : 1;
@@ -325,7 +326,7 @@ namespace POESKillTree
                 for (int i = 0; i < CharName.Count; i++)
                 {
                     var s = CharName[i];
-                    var pos = Skillnodes.First(nd => nd.Value.name == s).Value.Position;
+                    var pos = Skillnodes.First(nd => nd.Value.name.ToUpper() == s.ToUpper()).Value.Position;
                     dc.DrawRectangle(StartBackgrounds[false].Value, null, new Rect(pos - new Vector2D(StartBackgrounds[false].Key.Width, StartBackgrounds[false].Key.Height), pos + new Vector2D(StartBackgrounds[false].Key.Width, StartBackgrounds[false].Key.Height)));
                     if (chartype==i)
                     {
