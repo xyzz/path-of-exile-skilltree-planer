@@ -69,7 +69,7 @@ namespace POESKillTree
         public void Reset()
         {
             SkilledNodes.Clear();
-            var node = Skillnodes.First(nd => nd.Value.name == CharName[chartype]);
+            var node = Skillnodes.First(nd => nd.Value.name.ToUpper() == CharName[chartype]);
             SkilledNodes.Add(node.Value.id);
             UpdateAvailNodes();
         }
