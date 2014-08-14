@@ -48,7 +48,7 @@ namespace POESKillTree
                                                                   {"#% Cast Speed Increase per Frenzy Charge",5},
                                                                   {"#% Critical Strike Chance Increase per Power Charge",50},
                                                               };
-        public static float LifePerLevel = 8;
+        public static float LifePerLevel = 12;
         public static float EvasPerLevel = 3;
         public static float ManaPerLevel = 4;
         public static float IntPerMana = 2;
