@@ -42,8 +42,8 @@ namespace POESKillTree
 
         public static Vector2D? IntersectLineLine( Vector2D s1, Vector2D e1, Vector2D s2, Vector2D e2 )
         {
-            Rect2D aabb1 = new Rect2D( s1, e1 );
-            Rect2D aabb2 = new Rect2D( s2, e2 );
+            var aabb1 = new Rect2D( s1, e1 );
+            var aabb2 = new Rect2D( s2, e2 );
             if ( !aabb1.IntersectsWith( aabb2 ) ) return null;
 
             double x1 = s1.X;
@@ -105,14 +105,14 @@ namespace POESKillTree
         public Vector2D Rotate( double angle )
         {
             return new Vector2D(
-                ( double )( Math.Cos( angle ) * X - Math.Sin( angle ) * Y ),
-                ( double )( Math.Sin( angle ) * X + Math.Cos( angle ) * Y )
+                Math.Cos( angle ) * X - Math.Sin( angle ) * Y,
+                Math.Sin( angle ) * X + Math.Cos( angle ) * Y
                 );
         }
 
         public bool IsZero { get { return X == 0 && Y == 0; } }
 
-        public double Length { get { return ( double )Math.Sqrt( X * X + Y * Y ); } }
+        public double Length { get { return Math.Sqrt( X * X + Y * Y ); } }
 
         public double ManhattenLength { get { return Math.Abs( X ) + Math.Abs( Y ); } }
 

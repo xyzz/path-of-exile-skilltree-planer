@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
-using System.Reflection;
-using System.Security.Permissions;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
@@ -17,29 +14,27 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
-using POESKillTree;
-using WPFSKillTree;
 
 namespace POESKillTree
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
-        List<PoEBuild> savedBuilds = new List<PoEBuild>();
+        readonly List<PoEBuild> _savedBuilds = new List<PoEBuild>();
 
-        private ItemAttributes ItemAttributes = null;
-        SkillTree Tree;
-        ToolTip sToolTip = new ToolTip();
-        private string lasttooltip;
-        private Vector2D multransform = new Vector2D();
-        private Vector2D addtransform = new Vector2D();
+        private ItemAttributes _itemAttributes;
+        SkillTree _tree;
+        readonly ToolTip _sToolTip = new ToolTip();
+        private string _lasttooltip;
+        private Vector2D _multransform;
+        private Vector2D _addtransform;
         public MainWindow()
         {
 
             Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
-            Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             //AppDomain.CurrentDomain.AssemblyResolve += ( sender, args ) =>
             //{
 
@@ -63,177 +58,183 @@ namespace POESKillTree
             InitializeComponent();
 
         }
-        static Action emptyDelegate = delegate
+        static readonly Action EmptyDelegate = delegate
         {
         };
 
-        private LoadingWindow loadingWindow;
-        private void startLoadingWindow()
+        private LoadingWindow _loadingWindow;
+        private void StartLoadingWindow()
         {
-            loadingWindow = new LoadingWindow();
-            loadingWindow.Show();
+            _loadingWindow = new LoadingWindow();
+            _loadingWindow.Show();
         }
-        private void updatetLoadingWindow(double c, double max)
+        private void UpdatetLoadingWindow(double c, double max)
         {
-            loadingWindow.progressBar1.Maximum = max;
-            loadingWindow.progressBar1.Value = c;
-            loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, emptyDelegate);
+            _loadingWindow.progressBar1.Maximum = max;
+            _loadingWindow.progressBar1.Value = c;
+            _loadingWindow.Dispatcher.Invoke(DispatcherPriority.Render, EmptyDelegate);
         }
-        private void closeLoadingWindow()
+        private void CloseLoadingWindow()
         {
 
-            loadingWindow.Close();
+            _loadingWindow.Close();
         }
 
-        private void border1_MouseMove(object sender, MouseEventArgs e)
+        private SkillTree.SkillNode _selectedNode;
+        private Vector2D _lastScannedPosition = new Vector2D(0,0);
+        private void Border1MouseMove(object sender, MouseEventArgs e)
         {
             Point p = e.GetPosition(border1.Child);
-            Vector2D v = new Vector2D(p.X, p.Y);
-            v = v * multransform + addtransform;
+            var v = new Vector2D(p.X, p.Y);
+            v = v * _multransform + _addtransform;
             textBox1.Text = "" + v.X;
             textBox2.Text = "" + v.Y;
+            if ((_lastScannedPosition - v).Length < 25) return;
+
+            _lastScannedPosition = v;
             SkillTree.SkillNode node = null;
 
-            var nodes = Tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
-            if (nodes != null && nodes.Count() != 0)
+            var nodes = _tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
+           
+            if (nodes != null && nodes.Any())
                 node = nodes.First().Value;
 
             if (node != null && node.Attributes.Count != 0)
             {
-
-                string tooltip = node.name + "\n" + node.attributes.Aggregate((s1, s2) => s1 + "\n" + s2);
-                if (!(sToolTip.IsOpen == true && lasttooltip == tooltip))
+                if (node != _selectedNode)
                 {
-                    sToolTip.Content = tooltip;
-                    sToolTip.IsOpen = true;
-                    lasttooltip = tooltip;
-                }
-                if (Tree.SkilledNodes.Contains(node.id))
-                {
-                    toRemove = Tree.ForceRefundNodePreview(node.id);
-                    if (toRemove != null)
-                        Tree.DrawRefundPreview(toRemove);
-                }
-                else
-                {
-                    prePath = Tree.GetShortestPathTo(node.id);
-                    Tree.DrawPath(prePath);
+                    string tooltip = node.Name + "\n" + node.AttributesString.Aggregate((s1, s2) => s1 + "\n" + s2);
+                    if (!(_sToolTip.IsOpen && _lasttooltip == tooltip))
+                    {
+                        _sToolTip.Content = tooltip;
+                        _sToolTip.IsOpen = true;
+                        _lasttooltip = tooltip;
+                    }
+                    if (_tree.SkilledNodes.Contains(node.Id))
+                    {
+                        _toRemove = _tree.ForceRefundNodePreview(node.Id);
+                        if (_toRemove != null)
+                            _tree.DrawRefundPreview(_toRemove);
+                    }
+                    else
+                    {
+                        _prePath = _tree.GetShortestPathTo(node.Id);
+                        _tree.DrawPath(_prePath);
+                    }
+                    _selectedNode = node;
                 }
 
             }
             else
             {
-                sToolTip.Tag = false;
-                sToolTip.IsOpen = false;
-                prePath = null;
-                toRemove = null;
-                if (Tree != null)
+                if (_selectedNode != null)
                 {
-                    Tree.ClearPath();
+                    _sToolTip.Tag = false;
+                    _sToolTip.IsOpen = false;
+                    _prePath = null;
+                    _toRemove = null;
+                    if (_tree != null)
+                    {
+                        _tree.ClearPath();
+                    }
+                    _selectedNode = null;
                 }
-
             }
-
         }
-        private List<ushort> prePath;
-        private HashSet<ushort> toRemove;
-        private bool justLoaded = false;
-        private void comboBox1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private List<ushort> _prePath;
+        private HashSet<ushort> _toRemove;
+        private bool _justLoaded;
+        private void ComboBox1SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (justLoaded)
+            if (_justLoaded)
             {
-                justLoaded = false;
+                _justLoaded = false;
                 return;
             }
 
-            if (Tree == null)
+            if (_tree == null)
                 return;
-            SkillTree.SkillNode startnode = Tree.Skillnodes.First(nd => nd.Value.name.ToUpper() == (Tree.CharName[cbCharType.SelectedIndex]).ToUpper()).Value;
-            Tree.SkilledNodes.Clear();
-            Tree.SkilledNodes.Add(startnode.id);
-            Tree.Chartype = Tree.CharName.IndexOf((Tree.CharName[cbCharType.SelectedIndex]).ToUpper());
-            Tree.UpdateAvailNodes();
+            SkillTree.SkillNode startnode = _tree.Skillnodes.First(nd => nd.Value.Name.ToUpper() == (_tree.CharName[cbCharType.SelectedIndex]).ToUpper()).Value;
+            _tree.SkilledNodes.Clear();
+            _tree.SkilledNodes.Add(startnode.Id);
+            _tree.Chartype = _tree.CharName.IndexOf((_tree.CharName[cbCharType.SelectedIndex]).ToUpper());
+            _tree.UpdateAvailNodes();
             UpdateAllAttributeList();
         }
-        private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void WindowSizeChanged(object sender, SizeChangedEventArgs e)
         {
 
         }
-        private void border1_Click(object sender, RoutedEventArgs e)
+        private void Border1Click(object sender, RoutedEventArgs e)
         {
-
+            
             Point p = ((MouseEventArgs)e.OriginalSource).GetPosition(border1.Child);
-            Vector2D v = new Vector2D(p.X, p.Y);
+            var v = new Vector2D(p.X, p.Y);
 
-            v = v * multransform + addtransform;
-            SkillTree.SkillNode node = null;
+            v = v * _multransform + _addtransform;
 
-            var nodes = Tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
-            if (nodes != null && nodes.Count() != 0)
+            var nodes = _tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
+            if (nodes != null && nodes.Any())
             {
-                node = nodes.First().Value;
+                SkillTree.SkillNode node = nodes.First().Value;
 
-                if (node.spc == null)
+                if (node.Spc == null)
                 {
-                    if (Tree.SkilledNodes.Contains(node.id))
+                    if (_tree.SkilledNodes.Contains(node.Id))
                     {
-                        Tree.ForceRefundNode(node.id);
+                        _tree.ForceRefundNode(node.Id);
                         UpdateAllAttributeList();
 
-                        prePath = Tree.GetShortestPathTo(node.id);
-                        Tree.DrawPath(prePath);
+                        _prePath = _tree.GetShortestPathTo(node.Id);
+                        _tree.DrawPath(_prePath);
                     }
-                    else if (prePath != null)
+                    else if (_prePath != null)
                     {
-                        foreach (ushort i in prePath)
+                        foreach (ushort i in _prePath)
                         {
-                            Tree.SkilledNodes.Add(i);
+                            _tree.SkilledNodes.Add(i);
                         }
                         UpdateAllAttributeList();
-                        Tree.UpdateAvailNodes();
+                        _tree.UpdateAvailNodes();
 
-                        toRemove = Tree.ForceRefundNodePreview(node.id);
-                        if (toRemove != null)
-                            Tree.DrawRefundPreview(toRemove);
+                        _toRemove = _tree.ForceRefundNodePreview(node.Id);
+                        if (_toRemove != null)
+                            _tree.DrawRefundPreview(_toRemove);
                     }
                 }
             }
-            tbSkillURL.Text = Tree.SaveToURL();
+            tbSkillURL.Text = _tree.SaveToUrl();
         }
-        private List<string> attiblist = new List<string>();
-        private ListCollectionView AttibuteCollection;
-        Regex backreplace = new Regex("#");
+        private readonly List<string> _attriblist = new List<string>();
+        private ListCollectionView _attibuteCollection;
+        readonly Regex _backreplace = new Regex("#");
         private string InsertNumbersInAttributes(KeyValuePair<string, List<float>> attrib)
         {
-            string s = attrib.Key;
-            foreach (var f in attrib.Value)
-            {
-                s = backreplace.Replace(s, f + "", 1);
-            }
-            return s;
+            return attrib.Value.Aggregate(attrib.Key, (current, f) => _backreplace.Replace(current, f + "", 1));
         }
+
         public void UpdateAttributeList()
         {
 
-            attiblist.Clear();
-            foreach (var item in (Tree.SelectedAttributes.Select(InsertNumbersInAttributes)))
+            _attriblist.Clear();
+            foreach (var item in (_tree.SelectedAttributes.Select(InsertNumbersInAttributes)))
             {
-                attiblist.Add(item);
+                _attriblist.Add(item);
 
             }
-            AttibuteCollection.Refresh();
-            tbUsedPoints.Text = "" + (Tree.SkilledNodes.Count - 1);
+            _attibuteCollection.Refresh();
+            tbUsedPoints.Text = "" + (_tree.SkilledNodes.Count - 1);
         }
-        private List<string> allAttributesList = new List<string>();
-        private ListCollectionView AllAttributeCollection;
+        private readonly List<string> _allAttributesList = new List<string>();
+        private ListCollectionView _allAttributeCollection;
         public void UpdateAllAttributeList()
         {
-            if (ItemAttributes != null)
+            if (_itemAttributes != null)
             {
 
 
-                var attritemp = Tree.SelectedAttributesWithoutImplicit;
-                foreach (ItemAttributes.Attribute mod in ItemAttributes.NonLocalMods)
+                var attritemp = _tree.SelectedAttributesWithoutImplicit;
+                foreach (ItemAttributes.Attribute mod in _itemAttributes.NonLocalMods)
                 {
                     if (attritemp.ContainsKey(mod.TextAttribute))
                     {
@@ -248,7 +249,7 @@ namespace POESKillTree
                     }
                 }
 
-                foreach (var a in Tree.ImplicitAttributes(attritemp))
+                foreach (var a in _tree.ImplicitAttributes(attritemp))
                 {
                     if (!attritemp.ContainsKey(a.Key))
                         attritemp[a.Key] = new List<float>();
@@ -264,32 +265,32 @@ namespace POESKillTree
                     }
                 }
 
-                allAttributesList.Clear();
+                _allAttributesList.Clear();
                 foreach (var item in (attritemp.Select(InsertNumbersInAttributes)))
                 {
-                    allAttributesList.Add(item);
+                    _allAttributesList.Add(item);
 
                 }
-                AllAttributeCollection.Refresh();
+                _allAttributeCollection.Refresh();
             }
 
             UpdateAttributeList();
         }
-        string TreeAddress = "http://www.pathofexile.com/passive-skill-tree/";
-        private void button2_Click(object sender, RoutedEventArgs e)
+
+        private void Button2Click(object sender, RoutedEventArgs e)
         {
             try
             {
                 if (tbSkillURL.Text.Contains("poezone.ru"))
                 {
-                    SkillTreeImporter.LoadBuildFromPoezone(Tree, tbSkillURL.Text);
-                    tbSkillURL.Text = Tree.SaveToURL();
+                    SkillTreeImporter.LoadBuildFromPoezone(_tree, tbSkillURL.Text);
+                    tbSkillURL.Text = _tree.SaveToUrl();
                 }
                 else
-                    Tree.LoadFromURL(tbSkillURL.Text);
+                    _tree.LoadFromUrl(tbSkillURL.Text);
 
-                justLoaded = true;
-                cbCharType.SelectedIndex = Tree.Chartype;
+                _justLoaded = true;
+                cbCharType.SelectedIndex = _tree.Chartype;
                 UpdateAllAttributeList();
             }
             catch (Exception)
@@ -311,8 +312,8 @@ namespace POESKillTree
                     Groups.Add(sa);
                 }
             }
-            public static List<string[]> Groups = new List<string[]>()
-                                                                 { 
+            public static List<string[]> Groups = new List<string[]>
+                                                  { 
                                                                      new []{"charg","Charge"},
                                                                      new []{"weapon","Weapon"},
                                                                        new []{"melee phys","Weapon"},
@@ -355,7 +356,7 @@ namespace POESKillTree
                                                                  };
             public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             {
-                string s = (string)value;
+                var s = (string)value;
                 foreach (var gp in Groups)
                 {
                     if (s.ToLower().Contains(gp[0].ToLower()))
@@ -373,24 +374,24 @@ namespace POESKillTree
         }
         public class NumberLessStringComparer : IComparer<string>
         {
-            static Regex numberfilter = new Regex(@"[0-9\\.]+");
+            static readonly Regex Numberfilter = new Regex(@"[0-9\\.]+");
 
             public int Compare(string x, string y)
             {
-                return numberfilter.Replace(x, "").CompareTo(numberfilter.Replace(y, ""));
+                return String.Compare(Numberfilter.Replace(x, ""), Numberfilter.Replace(y, ""), StringComparison.Ordinal);
             }
         }
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             File.WriteAllText("skilltreeAddress.txt", tbSkillURL.Text + "\n" + tbLevel.Text);
 
             if (lvSavedBuilds.Items.Count > 0)
             {
-                StringBuilder rawBuilds = new StringBuilder();
+                var rawBuilds = new StringBuilder();
                 foreach (ListViewItem lvi in lvSavedBuilds.Items)
                 {
-                    PoEBuild build = (PoEBuild)lvi.Content;
-                    rawBuilds.Append(build.name + '|' + build.description + ';' + build.url + '\n');
+                    var build = (PoEBuild)lvi.Content;
+                    rawBuilds.Append(build.Name + '|' + build.Description + ';' + build.Url + '\n');
                 }
                 File.WriteAllText("savedBuilds", rawBuilds.ToString().Trim());
             }
@@ -402,13 +403,13 @@ namespace POESKillTree
                 }
             }
         }
-        private void tbSkillURL_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void TbSkillUrlMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             tbSkillURL.SelectAll();
         }
-        private void button1_Click_1(object sender, RoutedEventArgs e)
+        private void Button1Click1(object sender, RoutedEventArgs e)
         {
-            string filetoload = "";
+            string filetoload;
             if (File.Exists("Data\\get-items"))
             {
                 filetoload = "Data\\get-items";
@@ -424,8 +425,8 @@ namespace POESKillTree
             }
 
 
-            ItemAttributes = new ItemAttributes(filetoload);
-            lbItemAttr.ItemsSource = ItemAttributes.Attributes;
+            _itemAttributes = new ItemAttributes(filetoload);
+            lbItemAttr.ItemsSource = _itemAttributes.Attributes;
             UpdateAllAttributeList();
 
 
@@ -436,53 +437,52 @@ namespace POESKillTree
         {
             popup1.IsOpen = false;
         }
-        private void btnDownloadItemData_Click(object sender, RoutedEventArgs e)
+        private void BtnDownloadItemDataClick(object sender, RoutedEventArgs e)
         {
             popup1.IsOpen = false;
             System.Diagnostics.Process.Start("http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text);
         }
-        private void tbCharName_TextChanged(object sender, TextChangedEventArgs e)
+        private void TbCharNameTextChanged(object sender, TextChangedEventArgs e)
         {
             tbCharLink.Text = "http://www.pathofexile.com/character-window/get-items?character=" + tbCharName.Text;
         }
-        private void tbSearch_TextChanged(object sender, TextChangedEventArgs e)
+        private void TbSearchTextChanged(object sender, TextChangedEventArgs e)
         {
-            Tree.HighlightNodes(tbSearch.Text, checkBox1.IsChecked.Value);
+            _tree.HighlightNodes(tbSearch.Text, checkBox1.IsChecked.Value);
         }
-        private void textBox3_TextChanged(object sender, TextChangedEventArgs e)
+        private void TextBox3TextChanged(object sender, TextChangedEventArgs e)
         {
-            int lvl = 0;
+            int lvl;
             if (int.TryParse(tbLevel.Text, out lvl))
             {
-                Tree.Level = lvl;
+                _tree.Level = lvl;
                 UpdateAllAttributeList();
             }
         }
-        private void button3_Click(object sender, RoutedEventArgs e)
+        private void Button3Click(object sender, RoutedEventArgs e)
         {
-            Tree.SkillAllHighligtedNodes();
+            _tree.SkillAllHighligtedNodes();
             UpdateAllAttributeList();
         }
-        private void button4_Click(object sender, RoutedEventArgs e)
+        private void Button4Click(object sender, RoutedEventArgs e)
         {
-            if (Tree == null)
+            if (_tree == null)
                 return;
-            Tree.Reset();
+            _tree.Reset();
 
             UpdateAllAttributeList();
         }
-        private RenderTargetBitmap ClipboardBmp;
-        private void btnScreenShot_Click(object sender, RoutedEventArgs e)
+        private RenderTargetBitmap _clipboardBmp;
+        private void BtnScreenShotClick(object sender, RoutedEventArgs e)
         {
-            int maxsize = 3000;
-            Geometry geometry = Tree.picActiveLinks.Clip;
-            Rect2D contentBounds = Tree.picActiveLinks.ContentBounds;
+            const int maxsize = 3000;
+            Rect2D contentBounds = _tree.PicActiveLinks.ContentBounds;
             contentBounds *= 1.2;
 
 
-            double aspect = contentBounds.Width / contentBounds.Height;
-            double xmax = contentBounds.Width;
-            double ymax = contentBounds.Height;
+            var aspect = contentBounds.Width / contentBounds.Height;
+            var xmax = contentBounds.Width;
+            var ymax = contentBounds.Height;
             if (aspect > 1 && xmax > maxsize)
             {
                 xmax = maxsize;
@@ -494,58 +494,59 @@ namespace POESKillTree
                 xmax = ymax * aspect;
             }
 
-            ClipboardBmp = new RenderTargetBitmap((int)xmax, (int)ymax, 96, 96, PixelFormats.Pbgra32);
-            VisualBrush db = new VisualBrush(Tree.SkillTreeVisual);
-            db.ViewboxUnits = BrushMappingMode.Absolute;
-            db.Viewbox = contentBounds;
-            DrawingVisual dw = new DrawingVisual();
+            _clipboardBmp = new RenderTargetBitmap((int)xmax, (int)ymax, 96, 96, PixelFormats.Pbgra32);
+            var db = new VisualBrush(_tree.SkillTreeVisual)
+                     {
+                         ViewboxUnits = BrushMappingMode.Absolute,
+                         Viewbox = contentBounds
+                     };
+            var dw = new DrawingVisual();
 
-            using (DrawingContext dc = dw.RenderOpen())
+            using (var dc = dw.RenderOpen())
             {
                 dc.DrawRectangle(db, null, new Rect(0, 0, xmax, ymax));
             }
-            ClipboardBmp.Render(dw);
-            ClipboardBmp.Freeze();
+            _clipboardBmp.Render(dw);
+            _clipboardBmp.Freeze();
 
-            Clipboard.SetImage(ClipboardBmp);
+            Clipboard.SetImage(_clipboardBmp);
 
-            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
+            image1.Fill = new VisualBrush(_tree.SkillTreeVisual);
 
         }
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private void WindowLoaded(object sender, RoutedEventArgs e)
         {
-            AttibuteCollection = new ListCollectionView(attiblist);
+            _attibuteCollection = new ListCollectionView(_attriblist);
 
-            listBox1.ItemsSource = AttibuteCollection;
+            listBox1.ItemsSource = _attibuteCollection;
             // AttibuteCollection.CustomSort = 
-            PropertyGroupDescription pgd = new PropertyGroupDescription("");
-            pgd.Converter = new GroupStringConverter();
-            AttibuteCollection.GroupDescriptions.Add(pgd);
+            var pgd = new PropertyGroupDescription("") {Converter = new GroupStringConverter()};
+            _attibuteCollection.GroupDescriptions.Add(pgd);
 
-            AllAttributeCollection = new ListCollectionView(allAttributesList);
-            AllAttributeCollection.GroupDescriptions.Add(pgd);
-            lbAllAttr.ItemsSource = AllAttributeCollection;
+            _allAttributeCollection = new ListCollectionView(_allAttributesList);
+            _allAttributeCollection.GroupDescriptions.Add(pgd);
+            lbAllAttr.ItemsSource = _allAttributeCollection;
 
-            Tree = SkillTree.CreateSkillTree(startLoadingWindow, updatetLoadingWindow, closeLoadingWindow);
-            image1.Fill = new VisualBrush(Tree.SkillTreeVisual);
+            _tree = SkillTree.CreateSkillTree(StartLoadingWindow, UpdatetLoadingWindow, CloseLoadingWindow);
+            image1.Fill = new VisualBrush(_tree.SkillTreeVisual);
 
 
-            Tree.Chartype = Tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
-            Tree.UpdateAvailNodes();
+            _tree.Chartype = _tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
+            _tree.UpdateAvailNodes();
             UpdateAllAttributeList();
-
-            multransform = Tree.TRect.Size / image1.RenderSize.Height;
-            addtransform = Tree.TRect.TopLeft;
-
+            
+            _multransform = _tree.Rect.Size / image1.RenderSize.Height;
+            _addtransform = _tree.Rect.TopLeft;
+           
             // loading last build
             if (File.Exists("skilltreeAddress.txt"))
             {
                 string s = File.ReadAllText("skilltreeAddress.txt");
                 tbSkillURL.Text = s.Split('\n')[0];
                 tbLevel.Text = s.Split('\n')[1];
-                button2_Click(this, new RoutedEventArgs());
-                justLoaded = false;
+                Button2Click(this, new RoutedEventArgs());
+                _justLoaded = false;
             }
 
             // loading saved build
@@ -556,49 +557,49 @@ namespace POESKillTree
                     string[] builds = File.ReadAllText("savedBuilds").Split('\n');
                     foreach (string b in builds)
                     {
-                        savedBuilds.Add(new PoEBuild(b.Split(';')[0].Split('|')[0], b.Split(';')[0].Split('|')[1], b.Split(';')[1]));
+                        _savedBuilds.Add(new PoEBuild(b.Split(';')[0].Split('|')[0], b.Split(';')[0].Split('|')[1], b.Split(';')[1]));
                     }
 
                     lvSavedBuilds.Items.Clear();
-                    foreach (PoEBuild build in savedBuilds)
+                    foreach (PoEBuild build in _savedBuilds)
                     {
                         ListViewItem lvi = new ListViewItem
                         {
                             Content = build
                         };
-                        lvi.MouseDoubleClick += lvi_MouseDoubleClick;
+                        lvi.MouseDoubleClick += LviMouseDoubleClick;
                         lvSavedBuilds.Items.Add(lvi);
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 MessageBox.Show("Unable to load the saved builds.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        void lvi_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        void LviMouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            ListViewItem lvi = (ListViewItem)sender;
-            tbSkillURL.Text = ((PoEBuild)lvi.Content).url;
-            button2_Click(this, null); // loading the build
+            var lvi = (ListViewItem)sender;
+            tbSkillURL.Text = ((PoEBuild)lvi.Content).Url;
+            Button2Click(this, null); // loading the build
         }
 
-        private void btnSaveNewBuild_Click(object sender, RoutedEventArgs e)
+        private void BtnSaveNewBuildClick(object sender, RoutedEventArgs e)
         {
             FormBuildName formBuildName = new FormBuildName();
             if ((bool)formBuildName.ShowDialog())
             {
-                ListViewItem lvi = new ListViewItem
+                var lvi = new ListViewItem
                 {
                     Content = new PoEBuild(formBuildName.getBuildName(), cbCharType.Text + ", " + tbUsedPoints.Text + " points used", tbSkillURL.Text)
                 };
-                lvi.MouseDoubleClick += lvi_MouseDoubleClick;
+                lvi.MouseDoubleClick += LviMouseDoubleClick;
                 lvSavedBuilds.Items.Add(lvi);
             }
         }
 
-        private void btnDelete_Click(object sender, RoutedEventArgs e)
+        private void BtnDeleteClick(object sender, RoutedEventArgs e)
         {
             if (lvSavedBuilds.SelectedItems.Count > 0)
             {
@@ -606,7 +607,7 @@ namespace POESKillTree
             }
         }
 
-        private void btnOverwriteBuild_Click(object sender, RoutedEventArgs e)
+        private void BtnOverwriteBuildClick(object sender, RoutedEventArgs e)
         {
             if (lvSavedBuilds.SelectedItems.Count > 0)
             {
@@ -618,26 +619,25 @@ namespace POESKillTree
             }
         }
 
-        private void btnDownloadItemData_Copy_Click(object sender, RoutedEventArgs e)
+        private void BtnDownloadItemDataCopyClick(object sender, RoutedEventArgs e)
         {
             popup1.IsOpen = false;
-            var fileDialog = new OpenFileDialog();
-            fileDialog.Multiselect = false;
+            var fileDialog = new OpenFileDialog {Multiselect = false};
             bool? ftoload = fileDialog.ShowDialog(this);
             if (ftoload.Value)
             {
-                ItemAttributes = new ItemAttributes(fileDialog.FileName);
-                lbItemAttr.ItemsSource = ItemAttributes.Attributes;
+                _itemAttributes = new ItemAttributes(fileDialog.FileName);
+                lbItemAttr.ItemsSource = _itemAttributes.Attributes;
                 UpdateAllAttributeList();
             }
 
 
         }
 
-        private void btnCopyStats_Click(object sender, RoutedEventArgs e)
+        private void BtnCopyStatsClick(object sender, RoutedEventArgs e)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (var at in attiblist)
+            var sb = new StringBuilder();
+            foreach (var at in _attriblist)
             {
                 sb.AppendLine(at);
             }
@@ -648,16 +648,16 @@ namespace POESKillTree
 
     class PoEBuild
     {
-        public string name, description, url;
+        public string Name, Description, Url;
         public PoEBuild(string n, string d, string u)
         {
-            this.name = n;
-            this.description = d;
-            this.url = u;
+            Name = n;
+            Description = d;
+            Url = u;
         }
         public override string ToString()
         {
-            return name + '\n' + description;
+            return Name + '\n' + Description;
         }
     }
 }

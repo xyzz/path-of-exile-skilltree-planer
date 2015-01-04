@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Data;
 using System.Xml;
 using System.Text.RegularExpressions;
@@ -30,45 +29,37 @@ namespace POESKillTree
 
             public class Mod
             {
-                enum ValueType
-                {
-                    Flat, Percentage, FlatMinMax
-                }
                 public static List<Mod> CreateMods(string attribute, ItemClass ic)
                 {
-                    List<Mod> mods = new List<Mod>();
-                    List<float> values = new List<float>();
-                    foreach (Match match in numberfilter.Matches(attribute))
-                    {
-                        values.Add(float.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture));
-                    }
+                    var mods = new List<Mod>();
+                    var values = (from Match match in numberfilter.Matches(attribute) select float.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture)).ToList();
                     string at = numberfilter.Replace(attribute, "#");
                     if (at == "+# to all Attributes")
                     {
-                        mods.Add(new Mod()
-                        {
-                            itemclass = ic,
+                        mods.Add(new Mod
+                                 {
+                            _itemclass = ic,
                             Value = values,
                             Attribute = "+# to Strength"
                         });
-                        mods.Add(new Mod()
-                        {
-                            itemclass = ic,
+                        mods.Add(new Mod
+                                 {
+                            _itemclass = ic,
                             Value = values,
                             Attribute = "+# to Dexterity"
                         });
-                        mods.Add(new Mod()
-                        {
-                            itemclass = ic,
+                        mods.Add(new Mod
+                                 {
+                            _itemclass = ic,
                             Value = values,
                             Attribute = "+# to Intelligence"
                         });
                     }        
                     else
                     {
-                        mods.Add(new Mod()
-                        {
-                            itemclass = ic,
+                        mods.Add(new Mod
+                                 {
+                            _itemclass = ic,
                             Value = values,
                             Attribute = at
                         });
@@ -76,14 +67,14 @@ namespace POESKillTree
                     return mods;
                 }
 
-                private ItemClass itemclass;
+                private ItemClass _itemclass;
                 public string Attribute;
                 public List<float> Value;
-                public bool isLocal
+                public bool IsLocal
                 {
                     get
                     {
-                        return ( itemclass != Item.ItemClass.Amulet && itemclass != Item.ItemClass.Ring && itemclass != Item.ItemClass.Belt ) &&
+                        return ( _itemclass != ItemClass.Amulet && _itemclass != ItemClass.Ring && _itemclass != ItemClass.Belt ) &&
                               (Attribute.Contains("increased Physical Damage") ||
                                 Attribute.Contains("Armour") ||
                                 Attribute.Contains("Evasion") ||
@@ -91,7 +82,7 @@ namespace POESKillTree
                                 Attribute.Contains("Weapon Class") ||
                                 Attribute.Contains("Critical Strike Chance with this Weapon") ||
                                 Attribute.Contains("Critical Strike Damage Multiplier with this Weapon")) ||
-                               ((itemclass == Item.ItemClass.MainHand ||itemclass == Item.ItemClass.OffHand)&&  Attribute.Contains("increased Attack Speed"));
+                               ((_itemclass == ItemClass.MainHand ||_itemclass == ItemClass.OffHand)&&  Attribute.Contains("increased Attack Speed"));
                     }
                 }
             }
@@ -118,7 +109,7 @@ namespace POESKillTree
                 if (val.ContainsKey("properties"))
                     foreach (RavenJObject obj in (RavenJArray)val["properties"])
                     {
-                        List<float> values = new List<float>();
+                        var values = new List<float>();
                         string s = "";
                       
                             foreach (RavenJArray jva in (RavenJArray)obj["values"])
@@ -130,8 +121,9 @@ namespace POESKillTree
                         
                         foreach (Match m in numberfilter.Matches(s))
                         {
-                            if (m.Value == "") values.Add(float.NaN);
-                            else values.Add(float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
+                            values.Add(m.Value == ""
+                                ? float.NaN
+                                : float.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture));
                         }
                         string cs = obj["name"].Value<string>() + ": " + (numberfilter.Replace(s, "#"));
 
@@ -141,18 +133,18 @@ namespace POESKillTree
                 if (val.ContainsKey("explicitMods"))
                     foreach (string s in val["explicitMods"].Values<string>())
                     {
-                        var mods = Mod.CreateMods(s.Replace("Additional ", ""), this.Class);
+                        var mods = Mod.CreateMods(s.Replace("Additional ", ""), Class);
                         Mods.AddRange(mods);
                     }
                 if (val.ContainsKey("implicitMods"))
                     foreach (string s in val["implicitMods"].Values<string>())
                     {
-                        var mods = Mod.CreateMods(s.Replace("Additional ", ""), this.Class);
+                        var mods = Mod.CreateMods(s.Replace("Additional ", ""), Class);
                         Mods.AddRange(mods);
                     }
             }
-            static Regex colorcleaner = new Regex("\\<.+?\\>");
-            static Regex numberfilter = new Regex("[0-9]*\\.?[0-9]+");
+
+            static readonly Regex numberfilter = new Regex("[0-9]*\\.?[0-9]+");
             public Item XmlRead(XmlReader xml)
             {
 
@@ -182,37 +174,33 @@ namespace POESKillTree
                             if (s.Contains("displayProperty"))
                             {
                                 List<float> attrval = new List<float>();
-                                string[] span = new string[2] { "", "" };
+                                string[] span = { "", "" };
                                 var xs = xml.ReadSubtree();
                                 xs.ReadToDescendant("span");
                                 for (int j = 0; xs.Read(); )
                                 {
                                     if (xs.NodeType == XmlNodeType.Text)
                                     {
-                                        span[j] = xs.Value.Replace("Additional ", ""); ;
+                                        span[j] = xs.Value.Replace("Additional ", "");
                                         j++;
                                     }
                                 }
                                 var matches = numberfilter.Matches(span[1]);
                                 if (matches != null && matches.Count != 0)
                                 {
-                                    foreach (Match match in matches)
-                                    {
-                                        attrval.Add(float.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture));
-                                    }
+                                    attrval.AddRange(from Match match in matches select float.Parse(match.Value, System.Globalization.CultureInfo.InvariantCulture));
                                     Attributes.Add(span[0] + "#", attrval);
                                 }
                             }
                             if (s == "implicitMod" || s == "explicitMod")
                             {
-                                string span = "";
                                 var xs = xml.ReadSubtree();
                                 xs.ReadToDescendant("span");
                                 while (xs.Read())
                                 {
                                     if (xs.NodeType == XmlNodeType.Text)
                                     {
-                                        var mods = Mod.CreateMods(xs.Value.Replace("Additional ", ""), this.Class);
+                                        var mods = Mod.CreateMods(xs.Value.Replace("Additional ", ""), Class);
                                         Mods.AddRange(mods);
                                     }
                                 }
@@ -227,33 +215,29 @@ namespace POESKillTree
             }
         }
 
-        List<Item> Equip = new List<Item>();
+        readonly List<Item> _equip = new List<Item>();
 
-        private Dictionary<string, List<float>> AgregatedAttributes;
         public ListCollectionView Attributes;
-        private List<Attribute> aList = new List<Attribute>();
+        private readonly List<Attribute> aList = new List<Attribute>();
         public List<Attribute> NonLocalMods = new List<Attribute>();
         public class Attribute : INotifyPropertyChanged
         {
-            public Attribute(string s, List<float> val, string grp)
+            public Attribute(string s, IEnumerable<float> val, string grp)
             {
                 attribute = s;
                 value = new List<float>(val);
                 group = grp;
             }
 
-            Regex backreplace = new Regex("#");
-            private string InsertNumbersInAttributes(string s, List<float> attrib)
+            readonly Regex backreplace = new Regex("#");
+            private string InsertNumbersInAttributes(string s, IEnumerable<float> attrib)
             {
-                foreach (var f in attrib)
-                {
-                    s = backreplace.Replace(s, f + "", 1);
-                }
-                return s;
+                return attrib.Aggregate(s, (current, f) => backreplace.Replace(current, f + "", 1));
             }
-            private string attribute;
-            private List<float> value;
-            private string group;
+
+            private readonly string attribute;
+            private readonly List<float> value;
+            private readonly string group;
             public List<float> Value { get { return value; } }
             public string TextAttribute
             {
@@ -302,7 +286,7 @@ namespace POESKillTree
 
 
 
-            Equip.Add(item);
+            _equip.Add(item);
         }
         public ItemAttributes(string path)
         {
@@ -359,7 +343,7 @@ namespace POESKillTree
             aList.Clear();
             NonLocalMods.Clear();
             Attributes = new ListCollectionView(aList);
-            foreach (Item item in Equip)
+            foreach (Item item in _equip)
             {
                 foreach (KeyValuePair<string, List<float>> attr in item.Attributes)
                 {
@@ -370,10 +354,10 @@ namespace POESKillTree
                 foreach (Item.Mod mod in item.Mods)
                 {
                     Attribute attTo = null;
-                    attTo = aList.Find(ad => ad.TextAttribute == mod.Attribute && ad.Group == (mod.isLocal ? item.Class.ToString() : "Independent"));
+                    attTo = aList.Find(ad => ad.TextAttribute == mod.Attribute && ad.Group == (mod.IsLocal ? item.Class.ToString() : "Independent"));
                     if (attTo == null)
                     {
-                        aList.Add(new Attribute(mod.Attribute, mod.Value, (mod.isLocal ? item.Class.ToString() : "Independent")));
+                        aList.Add(new Attribute(mod.Attribute, mod.Value, (mod.IsLocal ? item.Class.ToString() : "Independent")));
                     }
                     else
                     {
@@ -405,7 +389,7 @@ namespace POESKillTree
 
                 foreach (Item.Mod mod in item.Mods)
                 {
-                    if (mod.isLocal) continue;
+                    if (mod.IsLocal) continue;
                     Attribute attTo = null;
                     attTo = NonLocalMods.Find(ad => ad.TextAttribute == mod.Attribute);
                     if (attTo == null)
