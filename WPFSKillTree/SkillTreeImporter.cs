@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace POESKillTree
@@ -25,7 +24,7 @@ namespace POESKillTree
 
             string dataFile, buildFile;
             {
-                HttpWebRequest req = ( HttpWebRequest )WebRequest.Create( dataUrl );
+                var req = ( HttpWebRequest )WebRequest.Create( dataUrl );
                 req.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.30 (KHTML, like Gecko) Iron/12.0.750.0 Chrome/12.0.750.0 Safari/534.30";
                 WebResponse resp = req.GetResponse( );
                 dataFile = new StreamReader( resp.GetResponseStream( ) ).ReadToEnd( );
@@ -34,7 +33,7 @@ namespace POESKillTree
             {
                 string postData = "build=" + build;
                 byte[] postBytes = Encoding.ASCII.GetBytes( postData );
-                HttpWebRequest req = ( HttpWebRequest )WebRequest.Create( buildPostUrl );
+                var req = ( HttpWebRequest )WebRequest.Create( buildPostUrl );
                 req.Method = "POST";
                 req.ContentLength = postBytes.Length;
                 req.ContentType = "application/x-www-form-urlencoded";
@@ -62,7 +61,6 @@ namespace POESKillTree
                 dataStream.Close( );
 
                 WebResponse resp = req.GetResponse( );
-                var status = ( resp as HttpWebResponse ).StatusDescription;
                 buildFile = new StreamReader( resp.GetResponseStream( ) ).ReadToEnd( );
             }
 
@@ -73,13 +71,13 @@ namespace POESKillTree
             }
 
             // position decompose
-            List<Vector2D?> positions = new List<Vector2D?>( );
+            var positions = new List<Vector2D?>( );
             var lines = dataFile.Split( '\n' );
             foreach ( var line in lines )
                 if ( line.StartsWith( "skillpos=" ) )
                 {
                     string posString = line.Substring( line.IndexOf( '[' ) + 1, line.LastIndexOf( ']' ) - line.IndexOf( '[' ) - 1 );
-                    StringBuilder sb = new StringBuilder( );
+                    var sb = new StringBuilder( );
                     bool inBracket = false;
                     foreach ( var c in posString )
                     {
@@ -129,12 +127,11 @@ namespace POESKillTree
             //respose
             var buildResp = buildFile.Replace( "[", "" ).Replace( "]", "" ).Split( ',' );
             int character = int.Parse( buildResp[ 0 ] );
-            List<int> skilled = new List<int>( );
-
+           
             tree.Chartype = character;
             tree.SkilledNodes.Clear( );
-            SkillTree.SkillNode startnode = tree.Skillnodes.First( nd => nd.Value.name == tree.CharName[ tree.Chartype ].ToUpper( ) ).Value;
-            tree.SkilledNodes.Add( startnode.id );
+            SkillTree.SkillNode startnode = tree.Skillnodes.First( nd => nd.Value.Name == tree.CharName[ tree.Chartype ].ToUpper( ) ).Value;
+            tree.SkilledNodes.Add( startnode.Id );
 
             for ( int i = 1 ; i < buildResp.Length ; ++i )
             {
@@ -142,7 +139,7 @@ namespace POESKillTree
 
                 var poezonePos = ( positions[ int.Parse( buildResp[ i ] ) ].Value - new Vector2D( minx, miny ) ) * new Vector2D( 1 / ( maxx - minx ), 1 / ( maxy - miny ) );
                 double minDis = 2;
-                KeyValuePair<ushort, SkillTree.SkillNode> minNode = new KeyValuePair<ushort, SkillTree.SkillNode>();
+                var minNode = new KeyValuePair<ushort, SkillTree.SkillNode>();
                 foreach ( var node in tree.Skillnodes )
                 {
                     var nodePos = ( node.Value.Position - new Vector2D( nminx, nminy ) ) * new Vector2D( 1 / ( nmaxx - nminx ), 1 / ( nmaxy - nminy ) );

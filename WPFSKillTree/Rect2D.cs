@@ -17,7 +17,7 @@ namespace POESKillTree
         {
             return new Rect2D(o.TopLeft, o.BottomRight);
         }
-        private readonly Vector2D _Min, _Max;
+        private readonly Vector2D _min, _max;
         public Vector2D Min, Max;
 
         public double Left { get { return Min.X; } }
@@ -49,14 +49,14 @@ namespace POESKillTree
         public Rect2D( Vector2D v )
         {
             Min = Max = v;
-            _Min = _Max = v;
+            _min = _max = v;
         }
         public Rect2D( Vector2D min, Vector2D max )
         {
             Min = new Vector2D( Math.Min( min.X, max.X ), Math.Min( min.Y, max.Y ) );
             Max = new Vector2D( Math.Max( min.X, max.X ), Math.Max( min.Y, max.Y ) );
-            _Min = Min;
-            _Max = Max;
+            _min = Min;
+            _max = Max;
         }
 
         public Rect2D( double left, double top, double width, double height )
@@ -95,7 +95,7 @@ namespace POESKillTree
         }
         public override int GetHashCode( )
         {
-            return _Min.GetHashCode( ) ^ _Max.GetHashCode( );
+            return _min.GetHashCode( ) ^ _max.GetHashCode( );
         }
 
         public Rect2D Assimilate( Vector2D v )

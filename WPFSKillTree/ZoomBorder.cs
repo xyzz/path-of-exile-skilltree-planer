@@ -7,16 +7,16 @@ using System.Windows.Media;
 
 namespace POESKillTree
 {
-    public partial class ZoomBorder : Border
+    public class ZoomBorder : Border
     {
-        private UIElement child = null;
-        private Point origin;
-        private Point start;
+        private UIElement _child;
+        private Point _origin;
+        private Point _start;
         public Point Origin
         {
             get
             {
-                var tt = GetTranslateTransform(child);
+                var tt = GetTranslateTransform(_child);
 
                 return new Point(tt.X, tt.Y);
             }
@@ -40,9 +40,9 @@ namespace POESKillTree
             }
             set
             {
-                if (value != null && value != this.Child)
+                if (value != null && value != Child)
                 {
-                    this.Initialize(value);
+                    Initialize(value);
                 }
 
                 base.Child = value;
@@ -52,40 +52,40 @@ namespace POESKillTree
         public void Initialize(UIElement element)
         {
 
-            this.child = element;
-            if (child != null)
+            _child = element;
+            if (_child != null)
             {
-                TransformGroup group = new TransformGroup();
+                var group = new TransformGroup();
 
-                ScaleTransform st = new ScaleTransform();
+                var st = new ScaleTransform();
                 group.Children.Add(st);
 
-                TranslateTransform tt = new TranslateTransform();
+                var tt = new TranslateTransform();
 
                 group.Children.Add(tt);
 
-                child.RenderTransform = group;
-                child.RenderTransformOrigin = new Point(0.0, 0.0);
+                _child.RenderTransform = group;
+                _child.RenderTransformOrigin = new Point(0.0, 0.0);
 
-                child.MouseWheel += child_MouseWheel;
-                child.MouseLeftButtonDown += child_MouseLeftButtonDown;
-                child.MouseLeftButtonUp += child_MouseLeftButtonUp;
-                child.MouseMove += child_MouseMove;
-                child.PreviewMouseRightButtonDown += new MouseButtonEventHandler(child_PreviewMouseRightButtonDown);
+                _child.MouseWheel += ChildMouseWheel;
+                _child.MouseLeftButtonDown += ChildMouseLeftButtonDown;
+                _child.MouseLeftButtonUp += ChildMouseLeftButtonUp;
+                _child.MouseMove += ChildMouseMove;
+                _child.PreviewMouseRightButtonDown += ChildPreviewMouseRightButtonDown;
             }
         }
 
         public void Reset()
         {
-            if (child != null)
+            if (_child != null)
             {
                 // reset zoom
-                var st = GetScaleTransform(child);
+                var st = GetScaleTransform(_child);
                 st.ScaleX = 1.0;
                 st.ScaleY = 1.0;
 
                 // reset pan
-                var tt = GetTranslateTransform(child);
+                var tt = GetTranslateTransform(_child);
                 tt.X = 0.0;
                 tt.Y = 0.0;
             }
@@ -93,68 +93,66 @@ namespace POESKillTree
 
         #region Child Events
 
-        private void child_MouseWheel(object sender, MouseWheelEventArgs e)
+        private void ChildMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                var st = GetScaleTransform(child);
-                var tt = GetTranslateTransform(child);
+                var st = GetScaleTransform(_child);
+                var tt = GetTranslateTransform(_child);
 
                 double zoom = e.Delta > 0 ? .3 : -.3;
                 if (!(e.Delta > 0) && (st.ScaleX < 0.4 || st.ScaleY < 0.4))
                     return;
 
-                Point relative = e.GetPosition(child);
-                double abosuluteX;
-                double abosuluteY;
+                Point relative = e.GetPosition(_child);
 
-                abosuluteX = relative.X * st.ScaleX + tt.X;
-                abosuluteY = relative.Y * st.ScaleY + tt.Y;
+                double absoluteX = relative.X * st.ScaleX + tt.X;
+                double absoluteY = relative.Y * st.ScaleY + tt.Y;
 
                 st.ScaleX += zoom * st.ScaleX;
                 st.ScaleY += zoom * st.ScaleY;
 
-                tt.X = abosuluteX - relative.X * st.ScaleX;
-                tt.Y = abosuluteY - relative.Y * st.ScaleY;
+                tt.X = absoluteX - relative.X * st.ScaleX;
+                tt.Y = absoluteY - relative.Y * st.ScaleY;
             }
         }
 
-        private void child_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void ChildMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                var tt = GetTranslateTransform(child);
-                start = e.GetPosition(this);
-                origin = new Point(tt.X, tt.Y);
-                this.Cursor = Cursors.Hand;
-                child.CaptureMouse();
+                var tt = GetTranslateTransform(_child);
+                _start = e.GetPosition(this);
+                _origin = new Point(tt.X, tt.Y);
+                Cursor = Cursors.Hand;
+                _child.CaptureMouse();
             }
         }
 
-        private void child_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void ChildMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                child.ReleaseMouseCapture();
-                this.Cursor = Cursors.Arrow;
+                _child.ReleaseMouseCapture();
+                Cursor = Cursors.Arrow;
             }
         }
 
-        void child_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        void ChildPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            this.Reset();
+            Reset();
         }
 
-        private void child_MouseMove(object sender, MouseEventArgs e)
+        private void ChildMouseMove(object sender, MouseEventArgs e)
         {
-            if (child != null)
+            if (_child != null)
             {
-                if (child.IsMouseCaptured)
+                if (_child.IsMouseCaptured)
                 {
-                    var tt = GetTranslateTransform(child);
-                    Vector v = start - e.GetPosition(this);
-                    tt.X = origin.X - v.X;
-                    tt.Y = origin.Y - v.Y;
+                    var tt = GetTranslateTransform(_child);
+                    Vector v = _start - e.GetPosition(this);
+                    tt.X = _origin.X - v.X;
+                    tt.Y = _origin.Y - v.Y;
                 }
             }
         }
@@ -181,18 +179,6 @@ namespace POESKillTree
             remove { RemoveHandler(ClickEvent, value); }
 
         }
-
-
-
-        protected override void OnMouseDown(MouseButtonEventArgs e)
-        {
-
-            base.OnMouseDown(e);
-
-          //  CaptureMouse();
-
-        }
-
 
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
