@@ -80,6 +80,8 @@ namespace POESKillTree
             _loadingWindow.Close();
         }
 
+        private SkillTree.SkillNode _selectedNode;
+        private Vector2D _lastScannedPosition = new Vector2D(0,0);
         private void Border1MouseMove(object sender, MouseEventArgs e)
         {
             Point p = e.GetPosition(border1.Child);
@@ -87,52 +89,57 @@ namespace POESKillTree
             v = v * _multransform + _addtransform;
             textBox1.Text = "" + v.X;
             textBox2.Text = "" + v.Y;
+            if ((_lastScannedPosition - v).Length < 25) return;
+
+            _lastScannedPosition = v;
             SkillTree.SkillNode node = null;
 
             var nodes = _tree.Skillnodes.Where(n => ((n.Value.Position - v).Length < 50));
+           
             if (nodes != null && nodes.Any())
                 node = nodes.First().Value;
-                
-            
 
             if (node != null && node.Attributes.Count != 0)
             {
-                System.Console.WriteLine("In node");
-                string tooltip = node.Name + "\n" + node.AttributesString.Aggregate((s1, s2) => s1 + "\n" + s2);
-                if (!(_sToolTip.IsOpen && _lasttooltip == tooltip))
+                if (node != _selectedNode)
                 {
-                    _sToolTip.Content = tooltip;
-                    _sToolTip.IsOpen = true;
-                    _lasttooltip = tooltip;
-                }
-                if (_tree.SkilledNodes.Contains(node.Id))
-                {
-                    _toRemove = _tree.ForceRefundNodePreview(node.Id);
-                    if (_toRemove != null)
-                        _tree.DrawRefundPreview(_toRemove);
-                }
-                else
-                {
-                    _prePath = _tree.GetShortestPathTo(node.Id);
-                    _tree.DrawPath(_prePath);
+                    string tooltip = node.Name + "\n" + node.AttributesString.Aggregate((s1, s2) => s1 + "\n" + s2);
+                    if (!(_sToolTip.IsOpen && _lasttooltip == tooltip))
+                    {
+                        _sToolTip.Content = tooltip;
+                        _sToolTip.IsOpen = true;
+                        _lasttooltip = tooltip;
+                    }
+                    if (_tree.SkilledNodes.Contains(node.Id))
+                    {
+                        _toRemove = _tree.ForceRefundNodePreview(node.Id);
+                        if (_toRemove != null)
+                            _tree.DrawRefundPreview(_toRemove);
+                    }
+                    else
+                    {
+                        _prePath = _tree.GetShortestPathTo(node.Id);
+                        _tree.DrawPath(_prePath);
+                    }
+                    _selectedNode = node;
                 }
 
             }
             else
             {
-                
-                System.Console.WriteLine("No node");
-                _sToolTip.Tag = false;
-                _sToolTip.IsOpen = false;
-                _prePath = null;
-                _toRemove = null;
-                if (_tree != null)
+                if (_selectedNode != null)
                 {
-                    _tree.ClearPath();
+                    _sToolTip.Tag = false;
+                    _sToolTip.IsOpen = false;
+                    _prePath = null;
+                    _toRemove = null;
+                    if (_tree != null)
+                    {
+                        _tree.ClearPath();
+                    }
+                    _selectedNode = null;
                 }
-
             }
-
         }
         private List<ushort> _prePath;
         private HashSet<ushort> _toRemove;
@@ -528,10 +535,10 @@ namespace POESKillTree
             _tree.Chartype = _tree.CharName.IndexOf(((string)((ComboBoxItem)cbCharType.SelectedItem).Content).ToUpper());
             _tree.UpdateAvailNodes();
             UpdateAllAttributeList();
-
+            
             _multransform = _tree.Rect.Size / image1.RenderSize.Height;
             _addtransform = _tree.Rect.TopLeft;
-
+           
             // loading last build
             if (File.Exists("skilltreeAddress.txt"))
             {

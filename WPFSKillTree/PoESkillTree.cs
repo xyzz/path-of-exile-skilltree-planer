@@ -124,14 +124,18 @@ namespace POESKillTree
         public Main Main { get; set; }
         
         public Node[] Nodes { get; set; }
-        
-        public int MinX { get; set; }
-        
-        public int MinY { get; set; }
-        
-        public int MaxX { get; set; }
-        
-        public int MaxY { get; set; }
+
+        // ReSharper disable once InconsistentNaming
+        public int min_x { get; set; }
+
+        // ReSharper disable once InconsistentNaming
+        public int min_y { get; set; }
+
+        // ReSharper disable once InconsistentNaming
+        public int max_x { get; set; }
+
+        // ReSharper disable once InconsistentNaming        
+        public int max_y { get; set; }
         
         public Dictionary<string, Dictionary<float, string>> Assets { get; set; }
         

@@ -229,9 +229,8 @@ namespace POESKillTree
                 }
             }
 
-            Rect = new Rect2D( new Vector2D( inTree.MinX * 1.1 , inTree.MinY * 1.1 ) ,
-                               new Vector2D(inTree.MaxX * 1.1, inTree.MaxY * 1.1));
-
+            Rect = new Rect2D( new Vector2D( inTree.min_x * 1.1 , inTree.min_y * 1.1 ) ,
+                               new Vector2D(inTree.max_x * 1.1, inTree.max_y * 1.1));
 
 
 
